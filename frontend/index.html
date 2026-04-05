@@ -233,6 +233,7 @@
       2) Wait for polling to switch to success<br>
       3) Transfer unlocks after verified=true
     </div>
+    <div id="polygonQr" style="display:none;justify-content:center;margin:10px 0;"></div>
     <div class="alert" id="polygonAlert"></div>
   </div>
 
@@ -277,6 +278,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+<!-- QRCode CDN: attaches QRCode to window.QRCode -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 
   // We use a simpler ID generation for the demo that fits within the JS-SDK core
@@ -724,6 +727,26 @@
       // User scans in wallet, then we poll backend status until success.
       if (isRealMode && sessionID) {
         const qrCode = qData?.session?.qrCode || '';
+        // Show QR code visually
+        const qrDiv = document.getElementById('polygonQr');
+        if (qrCode) {
+          qrDiv.style.display = 'flex';
+          qrDiv.innerHTML = '';
+          // Wait for QRCode to be available on window (in case script loads late)
+          function renderQr() {
+            if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+              window.QRCode.toCanvas(qrCode, { width: 180, margin: 1, color: { dark: '#3b82f6', light: '#fff' } }, function (err, canvas) {
+                if (!err) qrDiv.appendChild(canvas);
+              });
+            } else {
+              setTimeout(renderQr, 100); // Try again shortly
+            }
+          }
+          renderQr();
+        } else {
+          qrDiv.style.display = 'none';
+          qrDiv.innerHTML = '';
+        }
         showAlert(
           al,
           'info',
@@ -751,6 +774,8 @@
             polygonIdVerified = true;
             showAlert(al, 'success', '✅ Polygon ID proof accepted. You can now execute the transfer.');
             btn.innerHTML = '✅ Polygon ID Verified';
+            qrDiv.style.display = 'none';
+            qrDiv.innerHTML = '';
             return;
           }
 
@@ -759,6 +784,8 @@
             const msg = vData.error || vData.message || 'Polygon ID verification failed';
             showAlert(al, 'error', '❌ ' + msg);
             resetBtn(btn, '🛡️ Verify with Polygon ID');
+            qrDiv.style.display = 'none';
+            qrDiv.innerHTML = '';
             return;
           }
 
@@ -768,6 +795,8 @@
         polygonIdVerified = false;
         showAlert(al, 'error', '⌛ Verification timed out. Scan QR in wallet and click verify again.');
         resetBtn(btn, '🛡️ Verify with Polygon ID');
+        qrDiv.style.display = 'none';
+        qrDiv.innerHTML = '';
         return;
       }
 
