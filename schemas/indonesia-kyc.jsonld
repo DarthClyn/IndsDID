@@ -1,19 +1,31 @@
 {
   "@context": [
-    "https://www.w3.org/2018/credentials/v1",
     {
-      "IndonesiaKYC": "https://example.org/credentials/IndonesiaKYC",
-      "isVerified": "https://schema.org/Boolean",
-      "fusedScore": "https://schema.org/Number"
+      "@version": 1.1,
+      "@protected": true,
+      "id": "@id",
+      "type": "@type",
+      "IndonesiaKYC": {
+        "@id": "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/indonesia-kyc.jsonld#IndonesiaKYC",
+        "@context": {
+          "@version": 1.1,
+          "@protected": true,
+          "id": "@id",
+          "type": "@type",
+          "isVerified": {
+            "@id": "https://example.org/isVerified",
+            "@type": "http://www.w3.org/2001/XMLSchema#boolean"
+          },
+          "fusedScore": {
+            "@id": "https://example.org/fusedScore",
+            "@type": "http://www.w3.org/2001/XMLSchema#integer"
+          },
+          "wallet": {
+            "@id": "https://example.org/wallet",
+            "@type": "http://www.w3.org/2001/XMLSchema#string"
+          }
+        }
+      }
     }
-  ],
-  "@id": "https://example.org/schemas/indonesia-kyc.jsonld",
-  "@type": "IndonesiaKYC",
-  "description": "Indonesia KYC credential schema used for InterBio-based verification.",
-  "credentialSubject": {
-    "@id": "did:polygonid:ethereum:sepolia:subject",
-    "@type": "IndonesiaKYC",
-    "isVerified": true,
-    "fusedScore": 13
-  }
+  ]
 }

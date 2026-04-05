@@ -121,11 +121,13 @@
     footer { margin-top:32px; text-align:center; font-size:11px; color:var(--muted); line-height:2; }
     footer code { font-family:'JetBrains Mono',monospace; background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:10px; }
   </style>
+  <!-- QRCode library: David Shim version (uses new QRCode constructor) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
 <header>
-  <div class="badge"><span class="dot"></span> GOE Alliance · TOTM · Sepolia Testnet · Live KYC</div>
+  <div class="badge"><span class="dot"></span> GOE Alliance · TOTM · Polygon Amoy · Live KYC</div>
   <h1>Cross-Border <em>KYC Identity</em> on Chain</h1>
   <p>Indonesia KYC → on-chain identity proof → cross-border transfer to Vietnam<br/>Zero personal data ever touches the blockchain.</p>
 </header>
@@ -141,9 +143,9 @@
   <div class="flow-arrow">→</div>
   <div class="flow-node" id="flowInterbioNode">InterBio API (live)</div>
   <div class="flow-arrow">→</div>
-  <div class="flow-node">DIDRegistry (Sepolia)</div>
+  <div class="flow-node">DIDRegistry (Amoy)</div>
   <div class="flow-arrow">→</div>
-  <div class="flow-node">🌉 Bridge Contract</div>
+  <div class="flow-node">🌉 Bridge Contract (Amoy)</div>
   <div class="flow-arrow">→</div>
   <div class="flow-node">🇻🇳 Vietnam Wallet</div>
 </div>
@@ -215,7 +217,7 @@
 
   <div class="stats-bar">
     <div class="stat-chip"><div class="sv" id="statTxCount">—</div><div class="sk">Bridge TXs</div></div>
-    <div class="stat-chip"><div class="sv" id="statVolume">—</div><div class="sk">Volume (ETH)</div></div>
+    <div class="stat-chip"><div class="sv" id="statVolume">—</div><div class="sk">Volume (MATIC)</div></div>
     <div class="stat-chip"><div class="sv" id="statVerified">—</div><div class="sk">Verified Wallets</div></div>
   </div>
 
@@ -242,7 +244,7 @@
     <input type="text" id="toWallet" placeholder="0x..." />
   </div>
   <div class="form-group">
-    <label>Amount (ETH — Sepolia testnet)</label>
+    <label>Amount (MATIC — Amoy testnet)</label>
     <input type="number" id="txAmount" placeholder="e.g. 0.001" step="0.0001" min="0.0001" value="0.001" />
   </div>
   <button class="btn btn-green" id="btnTransfer" onclick="runTransfer()">🌉 Execute Cross-Border Transfer</button>
@@ -254,34 +256,6 @@
   </div>
 </div>
 
-<!-- Step 5: Identity & VC Profile Component -->
-<div class="card" id="cardIdentityProfile" style="margin-top: 30px; border-bottom: 3px solid var(--primary);">
-  <div class="card-title">
-    <div class="cdot" style="background:var(--primary)"></div> 
-    Polygon ID Profile (Sepolia Testnet)
-  </div>
-  <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Manage your Decentralized Identifier and privacy-preserving credentials.</p>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-    <!-- DID Part -->
-    <div class="info-box" style="margin: 0; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2);">
-      <label style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Method Specific Identifier (DID)</label>
-      <div id="statusDid" style="margin-top: 8px; font-family: monospace; font-size: 12px; word-break: break-all; opacity: 0.8;">No identity created.</div>
-      <div id="didLoader" class="spinner" style="display: none; margin-top: 8px;"></div>
-      <button id="btnCreateDid" class="btn" style="margin-top: 15px; width: 100%; border: 1px solid var(--primary); background: transparent; color: var(--primary);" onclick="window.initializeDid()">Initialize DID</button>
-    </div>
-
-    <!-- VC Part -->
-    <div class="info-box" style="margin: 0; background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2);">
-      <label style="color: var(--success); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Verifiable Credential (VC)</label>
-      <div id="statusVc" style="margin-top: 8px; font-size: 12px; opacity: 0.8;">No VC issued for this DID.</div>
-      <div id="vcLoader" class="spinner" style="display: none; margin-top: 8px;"></div>
-      <button id="btnMintVc" class="btn btn-green" style="margin-top: 15px; width: 100%;" onclick="mintPolygonVc()" disabled>Mint IndonesiaKYC VC</button>
-    </div>
-  </div>
-
-  <div id="profileAlert" class="alert" style="margin-top: 20px; display: none;"></div>
-</div>
 
 <!-- Transfer result -->
 <div class="card" id="cardTransferResult" style="display:none;">
@@ -445,8 +419,8 @@
   }
 
   // Generate / restore DID from local storage or deterministically derive it.
-  // The Polygon ID JS-SDK v1.43 does not support eth:sepolia natively.
-  // We generate a valid did:polygonid:eth:sepolia identifier deterministically
+  // The Polygon ID JS-SDK v1.43 natively supports polygon:amoy.
+  // We generate a valid did:polygonid:polygon:amoy identifier deterministically
   // from the wallet address using the iden3 base58 encoding algorithm locally.
   async function generateIdentity(walletAddr) {
     const addr = walletAddr || wallet;
@@ -628,7 +602,8 @@
     await generateIdentity(wallet);
     
     document.getElementById('btnConnectMetamask').disabled = true;
-    document.getElementById('btnUseDemo').disabled = true;
+    const demoBtn = document.getElementById('btnUseDemo');
+    if (demoBtn) demoBtn.disabled = true;
     
     showAlert(al, 'success', `✅ ${type} Active. Identity generated.`);
     
@@ -743,9 +718,9 @@
     rows.innerHTML = '';
     addRow(rows, 'Status', '<span class="verified-badge">✅ Whitelisted on DIDRegistry</span>');
     if (data.onChain?.txHash) {
-      addRow(rows, 'TX Hash', `<a href="${data.onChain.etherscanUrl}" target="_blank">${data.onChain.txHash}</a>`);
+      addRow(rows, 'TX Hash', `<a href="${data.onChain.polygonscanUrl || data.onChain.etherscanUrl}" target="_blank">${data.onChain.txHash}</a>`);
       addRow(rows, 'Block', data.onChain.blockNumber);
-      addRow(rows, 'Contract', `<a href="https://sepolia.etherscan.io/address/${data.onChain.contractAddress}" target="_blank">${data.onChain.contractAddress}</a>`);
+      addRow(rows, 'Contract', `<a href="https://amoy.polygonscan.com/address/${data.onChain.contractAddress}" target="_blank">${data.onChain.contractAddress}</a>`);
     } else {
       addRow(rows, 'Note', data.message || 'Already registered on-chain');
     }
@@ -792,8 +767,8 @@
       }
 
       const network = await provider.getNetwork();
-      if (Number(network.chainId) !== 11155111) {
-        throw new Error('Switch MetaMask network to Sepolia (chainId 11155111).');
+      if (Number(network.chainId) !== 80002) {
+        throw new Error('Switch MetaMask network to Polygon Amoy (chainId 80002).');
       }
 
       const bridge = new window.ethers.Contract(bridgeAddress, BRIDGE_ABI, signer);
@@ -828,7 +803,7 @@
         fromWallet: signerAddress,
         toWallet,
         amountEth: amount,
-        etherscanUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
+        etherscanUrl: `https://amoy.polygonscan.com/tx/${tx.hash}`,
       });
       await loadStats();
     } catch (e) {
@@ -879,22 +854,27 @@
           function renderQr() {
             const QRLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
             if (QRLib) {
-              QRLib.toDataURL(qrCode, { 
-                width: 250, 
-                margin: 1,
-                color: { dark: '#1a1a1a', light: '#ffffff' } 
-              }, function (err, url) {
-                if (err) {
-                  console.error('[POLYGON_ID] QR Generation Error:', err);
-                  qrDiv.innerHTML = '<span style="color:red;">QR Error: ' + err.message + '</span>';
-                } else {
-                  console.log("[POLYGON_ID] QR Rendered successfully (Data URL)");
-                  qrDiv.innerHTML = '<img src="' + url + '" style="display:block;max-width:100%;height:auto;margin:0 auto;" alt="Polygon ID QR Code" />';
-                }
+              console.log("[POLYGON_ID] Rendering QR with new QRCode()...");
+              qrDiv.innerHTML = ''; // Clear "Generating..."
+              new QRLib(qrDiv, {
+                text: qrCode,
+                width: 230,
+                height: 230,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRLib.CorrectLevel.H
               });
+              // Ensure the QR image is centered and visible (some versions inject a canvas/img)
+              setTimeout(() => {
+                const img = qrDiv.querySelector('img');
+                if (img) {
+                    img.style.margin = '0 auto';
+                    img.style.display = 'block';
+                }
+              }, 50);
             } else {
               console.log("[POLYGON_ID] Waiting for QRCode lib...");
-              setTimeout(renderQr, 150);
+              setTimeout(renderQr, 200);
             }
           }
           renderQr();
@@ -1074,7 +1054,7 @@
       const d = await r.json();
       if (d.bridgeStats) {
         document.getElementById('statTxCount').textContent = d.bridgeStats.totalTransactions ?? '0';
-        document.getElementById('statVolume').textContent = (d.bridgeStats.totalVolumeEth ?? '0') + ' ETH';
+        document.getElementById('statVolume').textContent = (d.bridgeStats.totalVolumeEth ?? '0') + ' MATIC';
       }
 
       if (wallet) {

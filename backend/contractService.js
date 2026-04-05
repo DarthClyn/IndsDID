@@ -22,9 +22,9 @@ const BRIDGE_ABI = [
 ];
 
 function getProvider() {
-  return new ethers.JsonRpcProvider(
-    process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com"
-  );
+  // Contracts are deployed on Polygon Amoy — use AMOY_RPC_URL
+  const rpc = process.env.AMOY_RPC_URL || process.env.SEPOLIA_RPC_URL || "https://rpc-amoy.polygon.technology";
+  return new ethers.JsonRpcProvider(rpc);
 }
 
 function getAdminWallet() {
@@ -55,7 +55,7 @@ async function whitelistWallet(walletAddress) {
   return {
     txHash: tx.hash,
     blockNumber: receipt.blockNumber,
-    etherscanUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
+    polygonscanUrl: `https://amoy.polygonscan.com/tx/${tx.hash}`,
     contractAddress: process.env.CONTRACT_ADDRESS,
   };
 }
@@ -65,14 +65,23 @@ async function checkVerification(walletAddress) {
   if (!process.env.CONTRACT_ADDRESS) throw new Error("CONTRACT_ADDRESS not set in .env");
 
   const registry = getRegistry();
-  const isVerified = await registry.isVerified(walletAddress);
-  let verifiedAt = null;
-  if (isVerified) {
-    const ts = await registry.verifiedAt(walletAddress);
-    verifiedAt = new Date(Number(ts) * 1000).toISOString();
+  try {
+    const isVerified = await registry.isVerified(walletAddress);
+    let verifiedAt = null;
+    if (isVerified) {
+      try {
+        const ts = await registry.verifiedAt(walletAddress);
+        verifiedAt = new Date(Number(ts) * 1000).toISOString();
+      } catch (tsErr) {
+        console.warn("[Registry] Could not fetch verifiedAt:", tsErr.message);
+      }
+    }
+    const total = await registry.totalVerified();
+    return { isVerified, verifiedAt, totalVerified: Number(total) };
+  } catch (err) {
+    console.error(`[Registry] checkVerification failed for ${walletAddress}:`, err.message);
+    throw new Error(`Contract error: ${err.message}`);
   }
-  const total = await registry.totalVerified();
-  return { isVerified, verifiedAt, totalVerified: Number(total) };
 }
 
 // Admin/relayer transfer path using Polygon Universal Verifier proof struct.
@@ -128,7 +137,7 @@ async function executeCrossBorderTransfer({ fromWallet, toWallet, amountEth, fro
     amountEth,
     fromCountry,
     toCountry,
-    etherscanUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
+    polygonscanUrl: `https://amoy.polygonscan.com/tx/${tx.hash}`,
     bridgeAddress: process.env.BRIDGE_ADDRESS,
   };
 }
@@ -137,16 +146,21 @@ async function executeCrossBorderTransfer({ fromWallet, toWallet, amountEth, fro
 async function getBridgeStats() {
   if (!process.env.BRIDGE_ADDRESS) return null;
   const bridge = getBridge();
-  const [total, volume] = await Promise.all([
-    bridge.totalTransactions(),
-    bridge.totalVolume(),
-  ]);
-  return {
-    totalTransactions: Number(total),
-    totalVolumeEth: ethers.formatEther(volume),
-    bridgeAddress: process.env.BRIDGE_ADDRESS,
-    registryAddress: process.env.CONTRACT_ADDRESS,
-  };
+  try {
+    const [total, volume] = await Promise.all([
+      bridge.totalTransactions(),
+      bridge.totalVolume(),
+    ]);
+    return {
+      totalTransactions: Number(total),
+      totalVolumeEth: ethers.formatEther(volume),
+      bridgeAddress: process.env.BRIDGE_ADDRESS,
+      registryAddress: process.env.CONTRACT_ADDRESS,
+    };
+  } catch (err) {
+    console.error("[Bridge] getBridgeStats failed:", err.message);
+    return null;
+  }
 }
 
 // ─── Sign a Verifiable Credential (VC) for the user ──────────────────────────

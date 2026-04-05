@@ -13,7 +13,7 @@ const VERIFIER_ADDRESS = process.env.VERIFIER_ADDRESS || "";
 const VERIFIER_MODE = (process.env.POLYGON_ID_VERIFIER_MODE || "mock").toLowerCase();
 const VERIFIER_API_URL = process.env.POLYGON_ID_VERIFIER_API_URL || "https://verifier-backend.privado.id";
 const VERIFIER_API_KEY = process.env.POLYGON_ID_VERIFIER_API_KEY || "";
-const POLYGON_CHAIN_ID = process.env.POLYGON_ID_CHAIN_ID || "11155111";
+const POLYGON_CHAIN_ID = process.env.POLYGON_ID_CHAIN_ID || "80002";
 const POLYGON_CIRCUIT_ID = process.env.POLYGON_ID_CIRCUIT_ID || "credentialAtomicQuerySigV2";
 
 // Reusable query for "Vietnam side" compliance:
@@ -308,7 +308,7 @@ async function verifyWithRealAdapter({ walletAddress, proof, query }) {
       walletAddress,
       proof,
       query,
-      network: "sepolia",
+      network: "amoy",
       verifierAddress: VERIFIER_ADDRESS,
       stateAddress: STATE_ADDRESS,
     },

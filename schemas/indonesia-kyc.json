@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Indonesia KYC",
+  "type": "object",
+  "required": ["isVerified", "fusedScore"],
+  "properties": {
+    "isVerified": {
+      "type": "boolean",
+      "title": "KYC Verified"
+    },
+    "fusedScore": {
+      "type": "integer",
+      "title": "Biometric Match Score (0-13)"
+    },
+    "wallet": {
+      "type": "string",
+      "title": "Verified Wallet Address"
+    }
+  }
+}

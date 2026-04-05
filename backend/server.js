@@ -66,7 +66,7 @@ app.get("/api/health", async (req, res) => {
     logRoute(rid, "GET /api/health", "response ok", { hasBridgeStats: Boolean(stats), kycMode: kyc.mockKyc ? "mock" : "live" });
     res.json({
       status: "ok",
-      network: "Sepolia",
+      network: "Polygon Amoy",
       kycMode: kyc.mockKyc ? "mock" : "live",
       interbioBaseUrl: kyc.baseUrl,
       interbioCredentialsConfigured: kyc.hasCredentials,
@@ -82,7 +82,7 @@ app.get("/api/health", async (req, res) => {
     logRoute(rid, "GET /api/health", "response fallback", e.message);
     res.json({
       status: "ok",
-      network: "Sepolia",
+      network: "Polygon Amoy",
       kycMode: kyc.mockKyc ? "mock" : "live",
       interbioBaseUrl: kyc.baseUrl,
       interbioCredentialsConfigured: kyc.hasCredentials,
@@ -104,7 +104,7 @@ app.get("/api/polygonid/query", (req, res) => {
     const verifier = getVerifierConfig();
     logRoute(rid, "GET /api/polygonid/query", "response ok");
     const base = {
-      network: "Sepolia",
+      network: "Polygon Amoy",
       verifierAddress: process.env.VERIFIER_ADDRESS || "NOT_CONFIGURED",
       stateAddress: process.env.POLYGON_ID_STATE_ADDRESS || "NOT_CONFIGURED",
       verifierMode: verifier.mode,
@@ -277,7 +277,7 @@ app.post("/api/kyc/verify", upload.single("faceImage"), async (req, res) => {
     // Step 3: Issue Reusable Identity Credential (VC)
     const credential = await signIdentityCredential(
       walletAddress,
-      did || "did:polygonid:offline",
+      did || "did:polygonid:polygon:amoy:offline",
       kycResult.score || 13
     );
     logRoute(rid, "POST /api/kyc/verify", "credential issued", {
@@ -287,7 +287,7 @@ app.post("/api/kyc/verify", upload.single("faceImage"), async (req, res) => {
 
     // Step 4: Prepare Polygon ID IndonesiaKYC credential (JSON-LD)
     const polygonIdCredential = await issueIndonesiaKycCredential({
-      did: did || "did:polygonid:offline",
+      did: did || "did:polygonid:polygon:amoy:offline",
       walletAddress,
       fusedScore: kycResult.score || 13,
       isVerified: true,
@@ -397,7 +397,7 @@ app.listen(PORT, () => {
   console.log(`\n🚀 DID Backend running on http://localhost:${PORT}`);
   console.log(`\n📄 DIDRegistry:    ${process.env.CONTRACT_ADDRESS || "⚠️  NOT SET"}`);
   console.log(`🌉 CrossBorderBridge: ${process.env.BRIDGE_ADDRESS || "⚠️  NOT SET"}`);
-  console.log(`🌐 Network: Sepolia`);
+  console.log(`🌐 Network: Polygon Amoy`);
   console.log(`🧪 KYC Mode: ${kyc.mockKyc ? "MOCK" : "LIVE"}`);
   console.log(`🔐 InterBio URL: ${kyc.baseUrl}`);
   console.log(`🪪 InterBio Credentials: ${kyc.hasCredentials ? "configured" : "missing"}`);
