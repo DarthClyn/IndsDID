@@ -614,7 +614,9 @@
     if (data.credential) {
       addRow(rows, 'ZKP Credential', '<span class="verified-badge" style="background:var(--accent-glow);color:var(--accent);border-color:rgba(59,130,246,0.3);">⛓️ Reusable Identity VC Issued</span>');
       addRow(rows, 'Issuer', data.credential.issuer);
-      addRow(rows, 'Score', data.credential.subject.biometricScore);
+      // Show the full VC as pretty-printed JSON
+      const vcJson = JSON.stringify(data.credential, null, 2);
+      rows.innerHTML += `<div style="margin-top:14px;"><label style='font-size:12px;color:var(--muted);margin-bottom:3px;display:block;'>Verifiable Credential (VC):</label><pre style='background:var(--surface2);color:var(--text);font-size:11px;padding:12px;border-radius:8px;overflow-x:auto;max-height:320px;'>${vcJson}</pre></div>`;
     }
     addRow(rows, 'Privacy', '🔒 NIK, name, face — not stored on-chain');
   }

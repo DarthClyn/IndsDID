@@ -143,17 +143,71 @@ async function issueIndonesiaKycCredential({ did, walletAddress, fusedScore, isV
     },
   };
 
-  // In a future step, this is where we'd call the Polygon ID Issuer
-  // Node / SDK to persist the credential into the state tree.
+  // POST to Polygon ID Issuer Node to mint/sign the credential
+  const ISSUER_API_URL = process.env.POLYGON_ID_ISSUER_API_URL || "";
+  if (!ISSUER_API_URL) {
+    console.error("[PolygonID] POLYGON_ID_ISSUER_API_URL is not set. Cannot mint credential.");
+    return {
+      ...credential,
+      _meta: {
+        schemaCid: schema.cid || null,
+        issuerDid: ISSUER_DID,
+        stateAddress: STATE_ADDRESS || null,
+        error: "POLYGON_ID_ISSUER_API_URL not set"
+      },
+    };
+  }
 
-  return {
-    ...credential,
-    _meta: {
-      schemaCid: schema.cid || null,
-      issuerDid: ISSUER_DID,
-      stateAddress: STATE_ADDRESS || null,
+  // Prepare payload for issuer node
+  const payload = {
+    credentialSchema: schema.url,
+    type: "IndonesiaKYC",
+    credentialSubject: {
+      id: did,
+      isVerified: Boolean(isVerified),
+      fusedScore: typeof fusedScore === "number" ? fusedScore : null,
     },
+    expiration: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365, // 1 year from now
+    refreshService: {
+      id: ISSUER_API_URL + "/v1/refresh",
+      type: "Iden3RefreshService2023"
+    }
   };
+
+  let signedCredential = null;
+  try {
+    console.log("[PolygonID] Issuing VC via issuer node:", JSON.stringify(payload));
+    const res = await axios.post(
+      `${ISSUER_API_URL}/v1/identities/${encodeURIComponent(ISSUER_DID)}/credentials`,
+      payload,
+      { headers: { "Content-Type": "application/json" }, timeout: 30000 }
+    );
+    signedCredential = res.data;
+    console.log("[PolygonID] Issuer node response:", JSON.stringify(signedCredential));
+    return {
+      ...signedCredential,
+      _meta: {
+        schemaCid: schema.cid || null,
+        issuerDid: ISSUER_DID,
+        stateAddress: STATE_ADDRESS || null,
+        issuerApiUrl: ISSUER_API_URL,
+        issued: true
+      }
+    };
+  } catch (err) {
+    console.error("[PolygonID] Error issuing VC:", err.response?.data || err.message);
+    return {
+      ...credential,
+      _meta: {
+        schemaCid: schema.cid || null,
+        issuerDid: ISSUER_DID,
+        stateAddress: STATE_ADDRESS || null,
+        issuerApiUrl: ISSUER_API_URL,
+        issued: false,
+        error: err.response?.data || err.message
+      }
+    };
+  }
 }
 
 function normalizeRealVerifierResponse(payload) {
