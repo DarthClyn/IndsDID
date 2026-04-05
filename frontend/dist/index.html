@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOE Alliance · Cross-Border KYC Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080b12; --surface: #0e1219; --surface2: #141920; --border: #1c2333;
+      --accent: #3b82f6; --accent-glow: rgba(59,130,246,0.12);
+      --green: #22c55e; --green-glow: rgba(34,197,94,0.12);
+      --red: #ef4444; --yellow: #f59e0b; --purple: #a855f7;
+      --text: #e2e8f0; --muted: #64748b; --radius: 12px;
+    }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:32px 16px 80px; }
+
+    header { width:100%; max-width:700px; text-align:center; margin-bottom:32px; }
+    .badge { display:inline-flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:5px 14px; font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:16px; }
+    .badge .dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    h1 { font-size:26px; font-weight:700; letter-spacing:-.5px; margin-bottom:8px; }
+    h1 em { font-style:normal; color:var(--accent); }
+    header p { color:var(--muted); font-size:13px; line-height:1.6; max-width:520px; margin:0 auto; }
+
+    /* Mode banner */
+    .mock-banner {
+      width:100%; max-width:700px;
+      background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25);
+      border-radius:10px; padding:10px 16px; margin-bottom:16px;
+      font-size:12px; color:var(--yellow); display:flex; align-items:center; gap:10px;
+    }
+
+    /* Flow bar */
+    .flow-bar { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:28px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
+    .flow-node { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; }
+    .flow-arrow { color:var(--border); font-size:16px; }
+
+    /* Steps */
+    .steps { display:flex; gap:0; align-items:center; margin-bottom:24px; width:100%; max-width:700px; }
+    .step-item { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; position:relative; }
+    .step-item:not(:last-child)::after { content:''; position:absolute; top:15px; left:55%; width:90%; height:1px; background:var(--border); }
+    .step-item.active:not(:last-child)::after, .step-item.done:not(:last-child)::after { background:var(--accent); }
+    .step-num { width:30px; height:30px; border-radius:50%; background:var(--surface2); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--muted); transition:all .3s; position:relative; z-index:1; }
+    .step-item.active .step-num { border-color:var(--accent); color:var(--accent); background:var(--accent-glow); }
+    .step-item.done .step-num { border-color:var(--green); color:var(--green); background:var(--green-glow); }
+    .step-label { font-size:10px; color:var(--muted); text-align:center; }
+    .step-item.active .step-label { color:var(--text); }
+
+    /* Cards */
+    .card { width:100%; max-width:700px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:12px; transition:opacity .3s; }
+    .card.locked { opacity:.3; pointer-events:none; }
+    .card-title { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .card-title .cdot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+
+    /* Form */
+    .form-group { margin-bottom:13px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:500; }
+    input[type="text"], input[type="number"] { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:9px 13px; color:var(--text); font-size:13px; font-family:'JetBrains Mono',monospace; outline:none; transition:border-color .2s; }
+    input:focus { border-color:var(--accent); }
+
+    /* Buttons */
+    .btn { width:100%; padding:11px 22px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:#2563eb; transform:translateY(-1px); }
+    .btn-primary:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; }
+    .btn-green { background:var(--green); color:#000; font-weight:700; }
+    .btn-green:hover { background:#16a34a; transform:translateY(-1px); }
+    .btn-green:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; }
+    .btn-outline { background:transparent; color:var(--accent); border:1px solid var(--accent); width:auto; padding:9px 18px; }
+    .btn-outline:hover { background:var(--accent-glow); }
+
+    /* Alerts */
+    .alert { border-radius:8px; padding:11px 14px; font-size:12px; line-height:1.6; margin-top:12px; display:none; }
+    .alert.show { display:block; }
+    .alert-success { background:var(--green-glow); border:1px solid rgba(34,197,94,.3); color:var(--green); }
+    .alert-error   { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); color:var(--red); }
+    .alert-info    { background:var(--accent-glow); border:1px solid rgba(59,130,246,.3); color:var(--accent); }
+    .alert-loading { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.3); color:var(--yellow); }
+
+    /* Wallet pill */
+    .wallet-pill { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--green); background:var(--green-glow); border:1px solid rgba(34,197,94,.2); border-radius:8px; padding:9px 14px; margin:10px 0; word-break:break-all; text-align:center; }
+
+    /* TX rows */
+    .tx-rows { margin-top:12px; }
+    .tx-row { display:flex; gap:12px; align-items:flex-start; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 13px; margin-bottom:6px; }
+    .tx-row .lbl { font-size:10px; color:var(--muted); min-width:90px; padding-top:2px; text-transform:uppercase; }
+    .tx-row .val { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text); word-break:break-all; }
+    .tx-row .val a { color:var(--accent); text-decoration:none; }
+    .tx-row .val a:hover { text-decoration:underline; }
+
+    /* Stats */
+    .stats-bar { display:flex; gap:10px; margin-bottom:14px; }
+    .stat-chip { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; flex:1; text-align:center; }
+    .stat-chip .sv { font-size:18px; font-weight:700; }
+    .stat-chip .sk { font-size:10px; color:var(--muted); margin-top:2px; }
+
+    /* Country row */
+    .country-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .country-pill { display:flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:13px; flex:1; justify-content:center; }
+    .arrow-icon { font-size:22px; color:var(--muted); }
+
+    /* Badges */
+    .verified-badge { display:inline-flex; align-items:center; gap:5px; background:var(--green-glow); border:1px solid rgba(34,197,94,.3); border-radius:999px; padding:3px 10px; font-size:11px; color:var(--green); font-weight:600; }
+    .unverified-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); border-radius:999px; padding:3px 10px; font-size:11px; color:var(--red); font-weight:600; }
+
+    /* ZKP note */
+    .zkp-note { background:linear-gradient(135deg,rgba(168,85,247,.06),rgba(59,130,246,.06)); border:1px solid rgba(168,85,247,.2); border-radius:8px; padding:11px 14px; font-size:11px; color:var(--muted); margin-top:10px; line-height:1.6; }
+    .zkp-note strong { color:var(--purple); }
+
+    /* Spinner */
+    .spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Check row */
+    .check-row { display:flex; gap:8px; }
+    .check-row input { flex:1; }
+
+    footer { margin-top:32px; text-align:center; font-size:11px; color:var(--muted); line-height:2; }
+    footer code { font-family:'JetBrains Mono',monospace; background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge"><span class="dot"></span> GOE Alliance · TOTM · Sepolia Testnet · Live KYC</div>
+  <h1>Cross-Border <em>KYC Identity</em> on Chain</h1>
+  <p>Indonesia KYC → on-chain identity proof → cross-border transfer to Vietnam<br/>Zero personal data ever touches the blockchain.</p>
+</header>
+
+<!-- Mode banner -->
+<div class="mock-banner" id="modeBanner">
+  ⚡ <strong>Live Mode Active</strong> — Real InterBio authentication, enrollment, and ID-to-face verification are enabled.
+</div>
+
+<!-- Flow diagram -->
+<div class="flow-bar">
+  <div class="flow-node">🇮🇩 Indonesia KYC</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node" id="flowInterbioNode">InterBio API (live)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">DIDRegistry (Sepolia)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">🌉 Bridge Contract</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">🇻🇳 Vietnam Wallet</div>
+</div>
+
+<!-- Progress Steps -->
+<div class="steps">
+  <div class="step-item active" id="step1Item"><div class="step-num">1</div><div class="step-label">Wallet</div></div>
+  <div class="step-item" id="step2Item"><div class="step-num">2</div><div class="step-label">KYC</div></div>
+  <div class="step-item" id="step3Item"><div class="step-num">3</div><div class="step-label">Whitelist</div></div>
+  <div class="step-item" id="step4Item"><div class="step-num">4</div><div class="step-label">Transfer</div></div>
+  <div class="step-item" id="step5Item"><div class="step-num">✓</div><div class="step-label">Done</div></div>
+</div>
+
+<!-- STEP 1: Wallet -->
+<div class="card" id="cardWallet">
+  <div class="card-title"><div class="cdot"></div> Step 1 — Connect Wallet</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+    Connect your MetaMask wallet or use the pre-funded Demo Wallet to anchor your identity on-chain.
+  </p>
+  <div class="wallet-pill" id="walletDisplay" style="display:none; margin-bottom: 8px;"></div>
+  <div class="wallet-pill" id="didDisplay" style="display:none; color:var(--purple); background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.2);"></div>
+  
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-primary" id="btnConnectMetamask" onclick="connectMetamask()" style="flex:1;">
+      🦊 Connect MetaMask
+    </button>
+    <button class="btn btn-outline" id="btnUseDemo" onclick="useDemoWallet()" style="flex:1;">
+      👤 Use Demo Wallet
+    </button>
+  </div>
+  
+  <div class="alert" id="walletAlert"></div>
+</div>
+
+<!-- STEP 2: KYC -->
+<div class="card locked" id="cardKyc">
+  <div class="card-title"><div class="cdot"></div> Step 2 — Indonesia KYC Verification</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+    Enter a valid NIK and upload a clear face image. The app calls InterBio Enroll first, then IDToBio verification.
+  </p>
+  <div class="form-group">
+    <label>NIK — National Identity Number</label>
+    <input type="text" id="nikInput" placeholder="e.g. 3171234567890001" value="3171234567890001" />
+  </div>
+  <div class="form-group">
+    <label>Face Photo <span style="color:var(--muted);font-size:11px;">(required by InterBio)</span></label>
+    <input type="file" id="faceInput" accept="image/*" />
+    <div id="faceMeta" style="margin-top:6px;font-size:11px;color:var(--muted);">No file selected</div>
+  </div>
+  <button class="btn btn-primary" id="btnVerify" onclick="runVerify()">🔍 Verify KYC &amp; Register On-Chain</button>
+  <div class="alert" id="kycAlert"></div>
+  <div class="zkp-note">
+    <strong>Privacy layer:</strong> Only <code>mapping(wallet → bool)</code> goes on-chain. No NIK, name, or face data stored anywhere on-chain.
+  </div>
+</div>
+
+<!-- STEP 3: Whitelist result -->
+<div class="card" id="cardWhitelist" style="display:none;">
+  <div class="card-title"><div class="cdot" style="background:var(--green)"></div> Step 3 — Identity Registered On-Chain</div>
+  <div class="tx-rows" id="whitelistRows"></div>
+</div>
+
+<!-- STEP 4: Transfer -->
+<div class="card locked" id="cardTransfer">
+  <div class="card-title"><div class="cdot" style="background:var(--purple)"></div> Step 4 — Cross-Border Transfer 🇮🇩 → 🇻🇳</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+    The <strong style="color:var(--text)">CrossBorderBridge contract</strong> checks <code>DIDRegistry.isVerified(sender)</code> before allowing any transfer.
+  </p>
+
+  <div class="stats-bar">
+    <div class="stat-chip"><div class="sv" id="statTxCount">—</div><div class="sk">Bridge TXs</div></div>
+    <div class="stat-chip"><div class="sv" id="statVolume">—</div><div class="sk">Volume (ETH)</div></div>
+    <div class="stat-chip"><div class="sv" id="statVerified">—</div><div class="sk">Verified Wallets</div></div>
+  </div>
+
+  <div class="country-row">
+    <div class="country-pill">🇮🇩 Indonesia <span style="color:var(--muted);font-size:11px;margin-left:6px;">(Sender)</span></div>
+    <div class="arrow-icon">→</div>
+    <div class="country-pill">🇻🇳 Vietnam <span style="color:var(--muted);font-size:11px;margin-left:6px;">(Recipient)</span></div>
+  </div>
+
+  <div class="form-group">
+    <label>Recipient Wallet Address (Vietnam)</label>
+    <input type="text" id="toWallet" placeholder="0x..." />
+  </div>
+  <div class="form-group">
+    <label>Amount (ETH — Sepolia testnet)</label>
+    <input type="number" id="txAmount" placeholder="e.g. 0.001" step="0.0001" min="0.0001" value="0.001" />
+  </div>
+  <button class="btn btn-green" id="btnTransfer" onclick="runTransfer()">🌉 Execute Cross-Border Transfer</button>
+  <div class="alert" id="transferAlert"></div>
+
+  <div class="zkp-note" style="margin-top:12px;">
+    <strong>How it works:</strong> Contract checks <code>isVerified(sender)</code> → if true → ETH sends + emits <code>CrossBorderTransfer</code> event.
+    In a ZKP upgrade, this becomes a Groth16 proof verification call.
+  </div>
+</div>
+
+<!-- Transfer result -->
+<div class="card" id="cardTransferResult" style="display:none;">
+  <div class="card-title"><div class="cdot" style="background:var(--green)"></div> Transfer Complete</div>
+  <div class="tx-rows" id="transferRows"></div>
+</div>
+
+<!-- Check wallet -->
+<div class="card" id="cardCheck">
+  <div class="card-title"><div class="cdot" style="background:var(--muted)"></div> Check Any Wallet</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Public read — checks on-chain verification status. No personal data returned.</p>
+  <div class="check-row">
+    <input type="text" id="checkAddr" placeholder="0x..." />
+    <button class="btn btn-outline" onclick="checkWallet()">Check</button>
+  </div>
+  <div class="alert" id="checkAlert"></div>
+</div>
+
+<footer>
+  <p>Backend · <code>http://localhost:3001</code> &nbsp;|&nbsp; DIDRegistry · <code id="footerRegistry">loading...</code></p>
+  <p>CrossBorderBridge · <code id="footerBridge">loading...</code></p>
+  <p style="margin-top:6px;color:#1e2a3a;">Zero personal data on-chain · Only cryptographic proof of verification</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+<script>
+
+  // We use a simpler ID generation for the demo that fits within the JS-SDK core
+  const API = 'http://localhost:3001';
+
+  // ── Demo wallet fallback ─────────────────────────────────────
+  const DEMO_WALLET    = '0x3A7fECFe9057E1A3CcAdB313D57b94E755a2d9D6';
+  const DEMO_RECIPIENT = '0xAbC1230000000000000000000000000000000001';
+
+  let wallet = null;
+  let ethProvider = null;
+  let faceImageBase64 = null;
+  let userDID = localStorage.getItem('user_did') || null;
+  let bridgeAddress = null;
+  const BRIDGE_ABI = [
+    'function sendCrossBorder(address payable recipient, string fromCountry, string toCountry) external payable returns (uint256 txId)',
+    'event CrossBorderTransfer(uint256 indexed txId, address indexed sender, address indexed recipient, uint256 amount, string fromCountry, string toCountry, uint256 timestamp)'
+  ];
+
+  function logStep(area, step, details) {
+    const tag = `[${area}] ${step}`;
+    if (details === undefined) {
+      console.log(tag);
+      return;
+    }
+    console.log(tag, details);
+  }
+
+  function getEthereumProvider() {
+    const eth = window.ethereum;
+    if (!eth) return null;
+
+    // Some wallets expose multiple providers. Prefer MetaMask explicitly.
+    if (Array.isArray(eth.providers) && eth.providers.length) {
+      return eth.providers.find(p => p.isMetaMask) || eth.providers[0];
+    }
+
+    return eth;
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  async function init() {
+    logStep('INIT', 'Bootstrapping app');
+    document.getElementById('toWallet').value = DEMO_RECIPIENT;
+    document.getElementById('checkAddr').value = DEMO_WALLET;
+    document.getElementById('faceInput').addEventListener('change', handleFaceUpload);
+
+    if (userDID) {
+      showDID(userDID);
+    }
+
+    try {
+      const r = await fetch(`${API}/api/health`);
+      const d = await r.json();
+      bridgeAddress = d.bridgeAddress && d.bridgeAddress !== 'NOT_DEPLOYED' ? d.bridgeAddress : null;
+      const short = a => a ? a.slice(0,10)+'...'+a.slice(-6) : 'N/A';
+      document.getElementById('footerRegistry').textContent = short(d.registryAddress);
+      document.getElementById('footerBridge').textContent = short(d.bridgeAddress);
+      logStep('INIT', 'Health loaded', {
+        kycMode: d.kycMode,
+        interbioConfigured: d.interbioCredentialsConfigured,
+        bridgeAddress,
+      });
+      if (d.bridgeStats) {
+        document.getElementById('statTxCount').textContent = d.bridgeStats.totalTransactions ?? '0';
+        document.getElementById('statVolume').textContent = (d.bridgeStats.totalVolumeEth ?? '0') + ' ETH';
+      }
+
+      const modeBanner = document.getElementById('modeBanner');
+      const flowNode = document.getElementById('flowInterbioNode');
+      if (d.kycMode === 'mock') {
+        modeBanner.innerHTML = '⚠️ <strong>Mock Mode Active</strong> — Set <code>MOCK_KYC=false</code> and InterBio creds in backend .env to use live APIs.';
+        flowNode.textContent = 'InterBio API (mock)';
+      } else {
+        modeBanner.innerHTML = '⚡ <strong>Live Mode Active</strong> — Real InterBio authentication, enrollment, and ID-to-face verification are enabled.';
+        flowNode.textContent = 'InterBio API (live)';
+      }
+    } catch (e) {
+      logStep('INIT', 'Health unavailable', e.message);
+      document.getElementById('footerRegistry').textContent = 'backend offline';
+      document.getElementById('footerBridge').textContent = 'start: cd backend && node server.js';
+    }
+  }
+
+  async function handleFaceUpload(event) {
+    const file = event?.target?.files?.[0];
+    const meta = document.getElementById('faceMeta');
+    if (!file) {
+      faceImageBase64 = null;
+      meta.textContent = 'No file selected';
+      logStep('KYC', 'Face image cleared');
+      return;
+    }
+    try {
+      faceImageBase64 = await fileToBase64(file);
+      meta.textContent = `Loaded: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+      logStep('KYC', 'Face image loaded', { name: file.name, sizeBytes: file.size });
+    } catch (err) {
+      faceImageBase64 = null;
+      meta.textContent = 'Failed to read image file';
+      showAlert(document.getElementById('kycAlert'), 'error', '❌ Could not read face image: ' + err.message);
+      logStep('KYC', 'Face image load failed', err.message);
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const parts = result.split(',');
+        if (parts.length < 2) return reject(new Error('Invalid image data URL'));
+        resolve(parts[1]);
+      };
+      reader.onerror = () => reject(reader.error || new Error('FileReader error'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showDID(did) {
+    const el = document.getElementById('didDisplay');
+    el.textContent = `🆔 DID: ${did}`;
+    el.style.display = 'block';
+  }
+
+  async function generateIdentity(userWallet) {
+    if (userDID) return userDID;
+    
+    // For demo: Generate a deterministic DID based on wallet + "reusable-identity"
+    // In a real app, this would use @iden3/js-iden3-core Id.fromBlockchainId
+    // But since wasm/crypto initialization is heavy, we'll simulate the DID string format
+    const hash = Array.from(userWallet.toLowerCase()).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0);
+    const mockDID = `did:polygonid:polygon:amoy:${Math.abs(hash).toString(16)}${Date.now().toString(16).slice(-4)}`;
+    
+    userDID = mockDID;
+    localStorage.setItem('user_did', userDID);
+    showDID(userDID);
+    return userDID;
+  }
+
+  // ── Step 1: Connect Metamask ──────────────────────────────────────────────
+  window.connectMetamask = async function() {
+    const btn = document.getElementById('btnConnectMetamask');
+    const al = document.getElementById('walletAlert');
+    logStep('WALLET', 'MetaMask connect requested');
+
+    ethProvider = getEthereumProvider();
+    if (!ethProvider) {
+      const scheme = window.location.protocol;
+      const hint = scheme === 'file:'
+        ? 'Serve frontend on http://localhost (MetaMask does not reliably inject on file://).'
+        : 'Ensure MetaMask extension is installed and unlocked in this browser profile.';
+      showAlert(al, 'info', `ℹ️ MetaMask not detected. ${hint} Auto-switching to Demo Wallet...`);
+      logStep('WALLET', 'Provider not found, using demo wallet');
+      setTimeout(() => useDemoWallet(), 1000);
+      return;
+    }
+    
+    btn.innerHTML = '<span class="spinner"></span> Connecting...';
+    try {
+      const accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
+      if (!accounts || !accounts.length) {
+        throw new Error('No account returned by wallet');
+      }
+
+      ethProvider.on?.('accountsChanged', (accs) => {
+        if (Array.isArray(accs) && accs[0] && accs[0].toLowerCase() !== wallet?.toLowerCase()) {
+          handleWalletConnected(accs[0], 'MetaMask');
+        }
+      });
+
+      handleWalletConnected(accounts[0], 'MetaMask');
+      logStep('WALLET', 'MetaMask connected', { account: accounts[0] });
+    } catch (e) {
+      btn.innerHTML = '🦊 Connect MetaMask';
+      showAlert(al, 'error', 'Rejected: ' + e.message);
+      logStep('WALLET', 'Connection rejected', e.message);
+    }
+  }
+
+  // ── Step 1: Use Demo Wallet ───────────────────────────────────────────────
+  window.useDemoWallet = async function() {
+    logStep('WALLET', 'Demo wallet selected');
+    handleWalletConnected(DEMO_WALLET, 'Demo Wallet');
+  }
+
+  // ── Common Wallet Logic ──────────────────────────────────────────────────
+  async function handleWalletConnected(address, type) {
+    logStep('WALLET', 'Handling connected wallet', { type, address });
+    wallet = address;
+    const display = document.getElementById('walletDisplay');
+    const al = document.getElementById('walletAlert');
+    
+    display.textContent = `👛 Wallet: ${wallet}`;
+    display.style.display = 'block';
+    
+    // Generate DID for this wallet
+    await generateIdentity(wallet);
+    
+    document.getElementById('btnConnectMetamask').disabled = true;
+    document.getElementById('btnUseDemo').disabled = true;
+    
+    showAlert(al, 'success', `✅ ${type} Active. Identity generated.`);
+    
+    unlock('cardKyc');
+    stepDone(1); stepActive(2);
+    
+    document.getElementById('checkAddr').value = wallet;
+
+    // Check if already verified on-chain
+    try {
+      const r = await fetch(`${API}/api/check/${wallet}`);
+      const d = await r.json();
+      logStep('WALLET', 'Verification status fetched', d);
+      document.getElementById('statVerified').textContent = d.totalVerified ?? '—';
+      if (d.isVerified) {
+        showAlert(al, 'info', `ℹ️ This wallet is already verified on-chain. You can jump straight to Step 4.`);
+        unlock('cardTransfer');
+        stepDone(2); stepDone(3); stepActive(4);
+        await loadStats();
+      }
+    } catch {}
+  }
+
+  // ── Step 2: KYC Verify ────────────────────────────────────────────────────
+  async function runVerify() {
+    const nik = document.getElementById('nikInput').value.trim() || '3171234567890001';
+    const btn = document.getElementById('btnVerify');
+    const al  = document.getElementById('kycAlert');
+
+    if (!wallet) return showAlert(al, 'error', '⚠️ Click "Use Demo Wallet" first');
+    if (!nik) return showAlert(al, 'error', '⚠️ Enter NIK');
+    if (!faceImageBase64) return showAlert(al, 'error', '⚠️ Upload a face photo first');
+
+    logStep('KYC', 'Starting enroll + verify flow', { wallet, nikLength: nik.length });
+
+    btn.innerHTML = '<span class="spinner"></span> Enrolling biometrics...';
+    btn.disabled = true;
+    showAlert(al, 'loading', '🔄 Step 1/2: Enrolling NIK + face image with InterBio...');
+
+    try {
+      const enrollRes = await fetch(`${API}/api/kyc/enroll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: wallet,
+          nik,
+          faceImageBase64,
+        })
+      });
+      const enrollData = await enrollRes.json();
+      logStep('KYC', 'Enroll response', enrollData);
+
+      if (enrollData.error) {
+        const text = String(enrollData.error).toLowerCase();
+        const allowVerify = text.includes('already') || text.includes('exist');
+        if (!allowVerify) {
+          showAlert(al, 'error', '❌ Enroll failed: ' + enrollData.error);
+          resetBtn(btn, '🔍 Verify KYC &amp; Register On-Chain');
+          return;
+        }
+      }
+
+      btn.innerHTML = '<span class="spinner"></span> Running ID-to-Face verification...';
+      showAlert(al, 'loading', '🔄 Step 2/2: Verifying uploaded face against NIK record...');
+
+      const verifyRes = await fetch(`${API}/api/kyc/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: wallet,
+          nik,
+          did: userDID,
+          faceImageBase64,
+        })
+      });
+      const data = await verifyRes.json();
+      logStep('KYC', 'Verify response', data);
+
+      if (data.error) {
+        showAlert(al, 'error', '❌ ' + data.error);
+        resetBtn(btn, '🔍 Verify KYC &amp; Register On-Chain');
+        return;
+      }
+      if (!data.kycVerified) {
+        showAlert(al, 'error', `❌ KYC Failed — ${data.message}`);
+        resetBtn(btn, '🔍 Verify KYC &amp; Register On-Chain');
+        return;
+      }
+
+      showAlert(al, 'success', `✅ KYC Verified! InterBio fused score: ${data.score ?? 'N/A'}`);
+      btn.innerHTML = '✅ Verified';
+      
+      if (data.credential) {
+        localStorage.setItem(`vc_${wallet}`, JSON.stringify(data.credential));
+      }
+      
+      stepDone(2); stepActive(3);
+      showWhitelistResult(data);
+      unlock('cardTransfer');
+      stepDone(3); stepActive(4);
+      await loadStats();
+    } catch (e) {
+      showAlert(al, 'error', '❌ Backend unreachable. Run: cd backend && node server.js\n\n' + e.message);
+      resetBtn(btn, '🔍 Verify KYC &amp; Register On-Chain');
+      logStep('KYC', 'Flow failed', e.message);
+    }
+  }
+
+  function showWhitelistResult(data) {
+    document.getElementById('cardWhitelist').style.display = 'block';
+    const rows = document.getElementById('whitelistRows');
+    rows.innerHTML = '';
+    addRow(rows, 'Status', '<span class="verified-badge">✅ Whitelisted on DIDRegistry</span>');
+    if (data.onChain?.txHash) {
+      addRow(rows, 'TX Hash', `<a href="${data.onChain.etherscanUrl}" target="_blank">${data.onChain.txHash}</a>`);
+      addRow(rows, 'Block', data.onChain.blockNumber);
+      addRow(rows, 'Contract', `<a href="https://sepolia.etherscan.io/address/${data.onChain.contractAddress}" target="_blank">${data.onChain.contractAddress}</a>`);
+    } else {
+      addRow(rows, 'Note', data.message || 'Already registered on-chain');
+    }
+    if (data.credential) {
+      addRow(rows, 'ZKP Credential', '<span class="verified-badge" style="background:var(--accent-glow);color:var(--accent);border-color:rgba(59,130,246,0.3);">⛓️ Reusable Identity VC Issued</span>');
+      addRow(rows, 'Issuer', data.credential.issuer);
+      addRow(rows, 'Score', data.credential.subject.biometricScore);
+    }
+    addRow(rows, 'Privacy', '🔒 NIK, name, face — not stored on-chain');
+  }
+
+  // ── Step 4: Cross-border transfer ─────────────────────────────────────────
+  async function runTransfer() {
+    const toWallet = document.getElementById('toWallet').value.trim();
+    const amount   = document.getElementById('txAmount').value.trim();
+    const btn = document.getElementById('btnTransfer');
+    const al  = document.getElementById('transferAlert');
+
+    if (!wallet) return showAlert(al, 'error', '⚠️ Use Demo Wallet first');
+    if (!toWallet || !toWallet.startsWith('0x') || toWallet.length !== 42)
+      return showAlert(al, 'error', '⚠️ Enter a valid recipient address (0x...)');
+    if (!amount || parseFloat(amount) <= 0)
+      return showAlert(al, 'error', '⚠️ Enter an amount > 0');
+
+    btn.innerHTML = '<span class="spinner"></span> Preparing wallet transaction...';
+    btn.disabled = true;
+    showAlert(al, 'loading', '🔐 Sending transaction from your connected wallet...');
+    logStep('TRANSFER', 'Starting user-wallet transfer', { wallet, toWallet, amount });
+
+    try {
+      if (!ethProvider) throw new Error('Connect MetaMask first. Demo wallet cannot sign transactions.');
+      if (!bridgeAddress) throw new Error('Bridge contract is not configured in backend health response.');
+
+      const provider = new window.ethers.BrowserProvider(ethProvider);
+      const signer = await provider.getSigner();
+      const signerAddress = await signer.getAddress();
+      if (signerAddress.toLowerCase() !== wallet.toLowerCase()) {
+        throw new Error('Connected account mismatch. Reconnect wallet and try again.');
+      }
+
+      const network = await provider.getNetwork();
+      if (Number(network.chainId) !== 11155111) {
+        throw new Error('Switch MetaMask network to Sepolia (chainId 11155111).');
+      }
+
+      const bridge = new window.ethers.Contract(bridgeAddress, BRIDGE_ABI, signer);
+      const tx = await bridge.sendCrossBorder(
+        toWallet,
+        'Indonesia',
+        'Vietnam',
+        { value: window.ethers.parseEther(amount) }
+      );
+      logStep('TRANSFER', 'Transaction submitted', { txHash: tx.hash });
+
+      const receipt = await tx.wait();
+      logStep('TRANSFER', 'Transaction confirmed', { blockNumber: receipt.blockNumber });
+
+      let txId = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = bridge.interface.parseLog(log);
+          if (parsed?.name === 'CrossBorderTransfer') {
+            txId = Number(parsed.args.txId);
+          }
+        } catch {}
+      }
+
+      showAlert(al, 'success', '✅ Cross-border transfer complete from your connected wallet');
+      btn.innerHTML = '✅ Transfer Complete';
+      stepDone(4); stepActive(5);
+      showTransferResult({
+        txHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        txId,
+        fromWallet: signerAddress,
+        toWallet,
+        amountEth: amount,
+        etherscanUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
+      });
+      await loadStats();
+    } catch (e) {
+      showAlert(al, 'error', '❌ ' + e.message);
+      resetBtn(btn, '🌉 Execute Cross-Border Transfer');
+      logStep('TRANSFER', 'Transfer failed', e.message);
+    }
+  }
+
+  function showTransferResult(t) {
+    document.getElementById('cardTransferResult').style.display = 'block';
+    const rows = document.getElementById('transferRows');
+    rows.innerHTML = '';
+    addRow(rows, 'Route', '🇮🇩 Indonesia → 🇻🇳 Vietnam');
+    addRow(rows, 'Sender', t.fromWallet);
+    addRow(rows, 'Recipient', t.toWallet);
+    addRow(rows, 'Amount', t.amountEth + ' ETH (Sepolia)');
+    if (t.txId) addRow(rows, 'Bridge TX #', t.txId);
+    if (t.txHash) addRow(rows, 'TX Hash', `<a href="${t.etherscanUrl}" target="_blank">${t.txHash} ↗</a>`);
+    if (t.blockNumber) addRow(rows, 'Block', t.blockNumber);
+    addRow(rows, 'On-chain data', '🔒 Route + Amount visible · All identity data: hidden');
+  }
+
+  // ── Check any wallet ──────────────────────────────────────────────────────
+  async function checkWallet() {
+    const addr = document.getElementById('checkAddr').value.trim();
+    const al = document.getElementById('checkAlert');
+    if (!addr || !addr.startsWith('0x') || addr.length !== 42)
+      return showAlert(al, 'error', '⚠️ Enter a valid 0x address');
+    showAlert(al, 'loading', '🔄 Reading from chain...');
+    try {
+      const r = await fetch(`${API}/api/check/${addr}`);
+      const d = await r.json();
+      logStep('CHECK', 'Wallet status response', d);
+      if (d.error) return showAlert(al, 'error', d.error);
+      const badge = d.isVerified
+        ? '<span class="verified-badge">✅ KYC Verified</span>'
+        : '<span class="unverified-badge">❌ Not Verified</span>';
+      const since = d.verifiedAt ? `<br/><small style="color:var(--muted)">Since: ${new Date(d.verifiedAt).toLocaleString()}</small>` : '';
+      const total = `<br/><small style="color:var(--muted)">Total verified wallets on-chain: ${d.totalVerified}</small>`;
+      showAlert(al, d.isVerified ? 'success' : 'error', badge + since + total);
+    } catch (e) {
+      showAlert(al, 'error', 'Backend offline: ' + e.message);
+    }
+  }
+
+  // ── UI/Flow helpers ──────────────────────────────────────────────────────
+  function showAlert(el, type, message) {
+    if (!el) return;
+    el.className = `alert alert-${type} show`;
+    el.innerHTML = message;
+  }
+
+  function resetBtn(btn, label) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = label;
+  }
+
+  function unlock(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.remove('locked');
+  }
+
+  function stepDone(step) {
+    const el = document.getElementById(`step${step}Item`);
+    if (!el) return;
+    el.classList.remove('active');
+    el.classList.add('done');
+  }
+
+  function stepActive(step) {
+    const el = document.getElementById(`step${step}Item`);
+    if (!el) return;
+    el.classList.add('active');
+  }
+
+  function addRow(container, label, value) {
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'tx-row';
+    row.innerHTML = `<div class="lbl">${label}</div><div class="val">${value}</div>`;
+    container.appendChild(row);
+  }
+
+  async function loadStats() {
+    try {
+      const r = await fetch(`${API}/api/health`);
+      const d = await r.json();
+      if (d.bridgeStats) {
+        document.getElementById('statTxCount').textContent = d.bridgeStats.totalTransactions ?? '0';
+        document.getElementById('statVolume').textContent = (d.bridgeStats.totalVolumeEth ?? '0') + ' ETH';
+      }
+
+      if (wallet) {
+        const c = await fetch(`${API}/api/check/${wallet}`);
+        const cd = await c.json();
+        document.getElementById('statVerified').textContent = cd.totalVerified ?? '0';
+      }
+    } catch {
+      // Keep existing values if backend is unavailable.
+    }
+  }
+
+  window.runVerify = runVerify;
+  window.runTransfer = runTransfer;
+  window.checkWallet = checkWallet;
+
+  init();
+</script>
+</body>
+</html>

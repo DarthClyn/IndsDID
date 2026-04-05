@@ -1,0 +1,21 @@
+{
+  "name": "did-kyc-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Polygon ID + ZKP Demo",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@iden3/js-crypto": "^1.0.0",
+    "@iden3/js-iden3-core": "^1.0.0",
+    "buffer": "^6.0.3",
+    "process": "^0.11.10",
+    "snarkjs": "^0.7.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vite-plugin-node-polyfills": "^0.22.0"
+  }
+}

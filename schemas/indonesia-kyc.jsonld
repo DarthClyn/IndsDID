@@ -1,0 +1,19 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    {
+      "IndonesiaKYC": "https://example.org/credentials/IndonesiaKYC",
+      "isVerified": "https://schema.org/Boolean",
+      "fusedScore": "https://schema.org/Number"
+    }
+  ],
+  "@id": "https://example.org/schemas/indonesia-kyc.jsonld",
+  "@type": "IndonesiaKYC",
+  "description": "Indonesia KYC credential schema used for InterBio-based verification.",
+  "credentialSubject": {
+    "@id": "did:polygonid:polygon:amoy:subject",
+    "@type": "IndonesiaKYC",
+    "isVerified": true,
+    "fusedScore": 13
+  }
+}

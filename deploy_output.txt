@@ -1,0 +1,9 @@
+﻿≡ƒÜÇ Deploying CrossBorderBridge to Sepolia...
+≡ƒöù Using DIDRegistry: 0x545623618F61490C5e981219379FCdda2eF77496
+≡ƒôì Deployer: 0x3A7fECFe9057E1A3CcAdB313D57b94E755a2d9D6
+
+Γ£à CrossBorderBridge deployed!
+≡ƒôä Bridge address: 0x1519878DFdCe776029440996bE01A7E8c3416ebD
+≡ƒöù Etherscan: https://sepolia.etherscan.io/address/0x1519878DFdCe776029440996bE01A7E8c3416ebD
+
+≡ƒæë Add to .env: BRIDGE_ADDRESS=0x1519878DFdCe776029440996bE01A7E8c3416ebD

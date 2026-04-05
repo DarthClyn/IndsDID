@@ -1,0 +1,23 @@
+{
+  "name": "did-kyc-demo-hardhat",
+  "version": "1.0.0",
+  "description": "GOE Alliance / TOTM On-chain DID with Indonesia KYC",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:registry": "hardhat run scripts/deploy.js",
+    "deploy:bridge": "hardhat run scripts/deployBridge.js",
+    "check:deploy": "hardhat run scripts/checkDeploy.js",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@iden3/js-crypto": "^1.3.2",
+    "@iden3/js-iden3-core": "^1.8.0",
+    "dotenv": "^16.4.5",
+    "snarkjs": "^0.7.6"
+  }
+}
