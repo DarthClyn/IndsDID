@@ -86,8 +86,8 @@ async function createVerifierSession() {
   });
 
   return {
-    sessionID: res.data?.sessionID || res.data?.sessionId || null,
-    qrCode: res.data?.qrCode || null,
+    sessionID: res.data?.sessionID || res.data?.sessionId || res.data?.id || res.data?.thid || null,
+    qrCode: res.data?.qrCode || (res.data ? JSON.stringify(res.data) : null),
     request: payload,
     raw: res.data,
   };

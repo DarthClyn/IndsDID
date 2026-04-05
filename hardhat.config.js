@@ -9,7 +9,7 @@ function getPrivateKey() {
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  defaultNetwork: "sepolia",
+  defaultNetwork: "amoy",
   solidity: {
     version: "0.8.20",
     settings: {
@@ -17,11 +17,33 @@ module.exports = {
     }
   },
   networks: {
+    // Polygon Amoy — primary deployment target (Polygon ID ecosystem)
+    amoy: {
+      url: process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.technology",
+      accounts: getPrivateKey() ? [getPrivateKey()] : [],
+      chainId: 80002,
+      gasPrice: "auto",
+    },
+    // Ethereum Sepolia — kept for reference / legacy
     sepolia: {
-      // Public Sepolia RPC — no API key needed
       url: process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
       accounts: getPrivateKey() ? [getPrivateKey()] : [],
       chainId: 11155111
     }
-  }
+  },
+  etherscan: {
+    apiKey: {
+      polygonAmoy: process.env.POLYGONSCAN_API_KEY || "placeholder",
+    },
+    customChains: [
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com",
+        },
+      },
+    ],
+  },
 };

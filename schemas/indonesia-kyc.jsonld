@@ -11,7 +11,7 @@
   "@type": "IndonesiaKYC",
   "description": "Indonesia KYC credential schema used for InterBio-based verification.",
   "credentialSubject": {
-    "@id": "did:polygonid:polygon:amoy:subject",
+    "@id": "did:polygonid:ethereum:sepolia:subject",
     "@type": "IndonesiaKYC",
     "isVerified": true,
     "fusedScore": 13

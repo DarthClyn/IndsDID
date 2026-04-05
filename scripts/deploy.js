@@ -6,9 +6,9 @@ function getNormalizedPrivateKey() {
   return raw.startsWith("0x") ? raw : `0x${raw}`;
 }
 
-function ensureSepoliaAndEnv() {
-  if (hre.network.name !== "sepolia") {
-    throw new Error(`This script is restricted to Sepolia. Current network: ${hre.network.name}`);
+function ensureAmoyAndEnv() {
+  if (hre.network.name !== "amoy") {
+    throw new Error(`This script targets Polygon Amoy. Current network: ${hre.network.name}. Run with: npx hardhat run scripts/deploy.js --network amoy`);
   }
   const pk = getNormalizedPrivateKey();
   if (!pk || pk.length !== 66) {
@@ -17,8 +17,8 @@ function ensureSepoliaAndEnv() {
 }
 
 async function main() {
-  ensureSepoliaAndEnv();
-  console.log("🚀 Deploying DIDRegistry to Sepolia...");
+  ensureAmoyAndEnv();
+  console.log("🚀 Deploying DIDRegistry to Polygon Amoy...");
 
   const [deployer] = await hre.ethers.getSigners();
   console.log("📍 Deployer address:", deployer.address);
@@ -33,7 +33,7 @@ async function main() {
   const address = await registry.getAddress();
   console.log("\n✅ DIDRegistry deployed!");
   console.log("📄 Contract address:", address);
-  console.log("🔗 Etherscan:", `https://sepolia.etherscan.io/address/${address}`);
+  console.log("🔗 PolygonScan:", `https://amoy.polygonscan.com/address/${address}`);
   console.log("\n👉 Copy this address into your .env as CONTRACT_ADDRESS=", address);
 }
 

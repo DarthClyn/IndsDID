@@ -19,9 +19,26 @@ const {
   getVerifierConfig,
   createVerifierSession,
 } = require("./polygonIdService");
+const { createSepoliaIdentity } = require("./identityService");
+
 
 const app = express();
+app.use(cors({ origin: "*" }));
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ─── Polygon ID: Create Sepolia DID (JS-SDK) ───────────────────────────────
+app.post("/api/polygonid/create-did", async (req, res) => {
+  const rid = requestId();
+  logRoute(rid, "POST /api/polygonid/create-did", "request received");
+  try {
+    const { did, credential } = await createSepoliaIdentity();
+    logRoute(rid, "POST /api/polygonid/create-did", "DID created", did);
+    res.json({ did, credential });
+  } catch (e) {
+    logRoute(rid, "POST /api/polygonid/create-did", "error", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "10mb" }));
