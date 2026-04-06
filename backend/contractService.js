@@ -100,12 +100,12 @@ async function executeCrossBorderTransfer(sender, recipient, amountEth) {
   // matches a verified identity on-chain for the demo.
   const registry = getRegistry();
   // Bypassed for testing purposes with unauthorized wallets
-  /*
+  
   const isVerified = await registry.isVerified(sender);
   if (!isVerified) {
     throw new Error(`Identity mismatch: Wallet ${sender} is NOT whitelisted on-chain.`);
   }
-  */
+  
 
   const amountWei = ethers.parseEther(amountEth.toString());
   const tx = await bridge.sendCrossBorder(recipient, "Indonesia", "Vietnam", { 
