@@ -14,6 +14,7 @@ const REGISTRY_ABI = [
 // ─── CrossBorderBridge ABI ───────────────────────────────────────────────────
 const BRIDGE_ABI = [
   "function sendCrossBorder(address payable recipient, string calldata fromCountry, string calldata toCountry) external payable returns (uint256 txId)",
+  "function sendCrossBorderOnBehalf(address sender, address payable recipient, string calldata fromCountry, string calldata toCountry, (uint64 requestId, uint256[] inputs, uint256[8] proof) proof) external payable returns (uint256 txId)",
   "function canTransact(address user) external view returns (bool)",
   "function getTransfer(uint256 txId) external view returns (tuple(address sender, address recipient, uint256 amount, string fromCountry, string toCountry, uint256 timestamp, bool settled))",
   "function totalTransactions() external view returns (uint256)",
@@ -87,31 +88,27 @@ async function checkVerification(walletAddress) {
 
 
 // ─── Execute cross-border transfer (gated by registry on-chain) ───────────
-async function executeCrossBorderTransfer(sender, recipient, amountEth) {
+async function executeCrossBorderTransfer(sender, recipient, amountEth, proof) {
   if (!process.env.BRIDGE_ADDRESS) throw new Error("BRIDGE_ADDRESS not set");
 
   const wallet = getAdminWallet();
-  console.log(`[Bridge] Executing transfer for ${sender} -> ${recipient} (${amountEth} MATIC)`);
+  console.log(`[Bridge] Executing transfer for ${sender} -> ${recipient} (${amountEth} MATIC) using Mock ZKP`);
 
   const bridge = getBridge(wallet);
   
-  // NOTE: On-chain, the contract itself check calls `DIDRegistry.isVerified(msg.sender)`.
-  // As this backend is acting as a relayer (admin wallet), we should ensure 'sender' 
-  // matches a verified identity on-chain for the demo.
-  const registry = getRegistry();
-  // Bypassed for testing purposes with unauthorized wallets
-  /*
-  const isVerified = await registry.isVerified(sender);
-  if (!isVerified) {
-    throw new Error(`Identity mismatch: Wallet ${sender} is NOT whitelisted on-chain.`);
-  }
-  */
-
+  // In Browser-Only DID mode, we use 'sendCrossBorderOnBehalf' which verifies the proof
   const amountWei = ethers.parseEther(amountEth.toString());
-  const tx = await bridge.sendCrossBorder(recipient, "Indonesia", "Vietnam", { 
-    value: amountWei,
-    gasLimit: 500000 
-  });
+  const tx = await bridge.sendCrossBorderOnBehalf(
+    sender, 
+    recipient, 
+    "Indonesia", 
+    "Vietnam", 
+    proof,
+    { 
+      value: amountWei,
+      gasLimit: 800000 
+    }
+  );
   
   console.log("[Bridge] Transfer TX sent:", tx.hash);
   const receipt = await tx.wait();
@@ -153,4 +150,3 @@ module.exports = {
   executeCrossBorderTransfer,
   getBridgeStats,
 };
-

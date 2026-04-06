@@ -29,14 +29,13 @@ app.get("/api/health", async (req, res) => {
   const rid = requestId();
   try {
     const stats = await getBridgeStats();
-    const kyc = getKycConfig();
     res.json({
       status: "ok",
+      mode: "REAL-KYC",
       timestamp: new Date().toISOString(),
       registryAddress: process.env.CONTRACT_ADDRESS || "NOT_SET",
       bridgeAddress: process.env.BRIDGE_ADDRESS || "NOT_SET",
       bridgeStats: stats,
-      kycMode: kyc.mockKyc ? "mock" : "live",
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,7 +54,7 @@ app.post("/api/kyc/enroll", async (req, res) => {
     }
 
     const result = await enrollUser({ nik, faceImageBase64: image });
-    res.json({ success: result.success, raw: result.raw });
+    res.json({ success: result.success, message: "Real KYC Enroll Success", raw: result.raw });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -73,12 +72,24 @@ app.post("/api/kyc/verify", async (req, res) => {
     }
 
     const kycResult = await verifyUser({ nik, faceImageBase64: image });
-    logRoute(rid, "POST /api/kyc/verify", "kyc result", { verified: kycResult.verified });
+    logRoute(rid, "POST /api/kyc/verify", "kyc result", { verified: kycResult.verified, score: kycResult.score });
 
     res.json({
       success: kycResult.verified,
       score: kycResult.score,
-      message: kycResult.verified ? "KYC Success" : "KYC Failed",
+      message: kycResult.verified ? "Real KYC Success" : "Real KYC Failed",
+      raw: kycResult.raw,
+      polygonIdCredential: kycResult.verified ? {
+        id: rid,
+        type: "IndonesiaKYC",
+        issuer: "GOE-Identity-Authority",
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: wallet || "0x000",
+          nik: nik,
+          isAdult: true 
+        }
+      } : null
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -123,12 +134,14 @@ app.post("/api/contract/whitelist", async (req, res) => {
 app.post("/api/contract/transfer", async (req, res) => {
   const rid = requestId();
   try {
-    const { from, to, amount } = req.body;
+    const { from, to, amount, proof } = req.body;
     logRoute(rid, "POST /api/contract/transfer", "received", { from, to, amount });
 
-    if (!from || !to || !amount) return res.status(400).json({ error: "Missing fields" });
+    if (!from || !to || !amount || !proof) {
+      return res.status(400).json({ error: "Missing fields or Proof object" });
+    }
 
-    const result = await executeCrossBorderTransfer(from, to, amount);
+    const result = await executeCrossBorderTransfer(from, to, amount, proof);
     res.json({ success: true, hash: result.hash });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -149,6 +162,6 @@ app.get("/api/contract/verify-status/:wallet", async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 Registry-Based DID Backend running on port ${PORT}`);
-  console.log(`🧪 Mode: ${getKycConfig().mockKyc ? "MOCK" : "LIVE"}\n`);
+  console.log(`\n🚀 REAL InterBio KYC Backend running on port ${PORT}`);
+  console.log(`📡 Identity Network: Polygon Amoy Testnet\n`);
 });
