@@ -571,71 +571,74 @@
     </div>
   </div>
 
-  <!-- STEP 1: KYC -->
-  <div class="card" id="cardKyc">
-    <div class="card-title">
-      <div class="cdot"></div>Identity Enrollment & Verification
-    </div>
 
-    <div id="enrollSection">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register With InterBio.</p>
-      <div class="form-group"><label>Full Name</label><input type="text" id="fullNameInput" placeholder="John Doe" />
+  <!-- Row 1: Enroll & Verify -->
+  <div style="display: flex; gap: 16px; max-width: 700px; margin-bottom: 12px; flex-wrap: wrap;">
+    <div class="card" id="cardKyc" style="flex:1 1 0; min-width:320px; max-width:340px;">
+      <div class="card-title">
+        <div class="cdot"></div>Identity Enrollment & Verification
       </div>
-      <div class="form-group"><label>Date of Birth</label><input type="date" id="dobInput" /></div>
-      <div class="form-group"><label>NIK (National ID)</label><input type="text" id="nikInput"
-          value="3171234567890001" /></div>
-      <button class="btn btn-primary" id="btnEnroll" onclick="runEnroll()">🧬 Enroll Biometrics</button>
+      <div id="enrollSection">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register With InterBio.</p>
+        <div class="form-group"><label>Full Name</label><input type="text" id="fullNameInput" placeholder="John Doe" /></div>
+        <div class="form-group"><label>Date of Birth</label><input type="date" id="dobInput" /></div>
+        <div class="form-group"><label>NIK (National ID)</label><input type="text" id="nikInput" value="3171234567890001" oninput="syncNikFields('nikInput')" /></div>
+        <div class="form-group">
+          <label>Captured Image</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:8px;background:var(--surface2);border:1px solid #333;opacity:0.85;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="4" fill="#64748b"/>
+                <rect x="4" y="16" width="16" height="6" rx="3" fill="#64748b"/>
+              </svg>
+            </span>
+            <span style="color:var(--muted);font-size:12px;">Captured Image <span style="color:var(--green);font-size:11px;">(locked)</span></span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btnEnroll" onclick="runEnroll()">🧬 Enroll Biometrics</button>
+        <div class="alert" id="kycAlert"></div>
+        <div id="zkpProcess" style="display:none; margin-top:15px; text-align:center;">
+          <div class="spinner" style="margin-bottom:10px;"></div>
+          <div id="zkpStatus" style="font-size:12px; color:var(--accent);">Processing Identity Registry...</div>
+        </div>
+      </div>
     </div>
-
-    <div id="verifySection" style="margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
-      <p style="font-size:13px;color:var(--muted);margin:16px 0;">Already enrolled? Perform private verification to
-        enable your wallet on-chain.</p>
+    <div class="card" id="cardVerify" style="flex:1 1 0; min-width:320px; max-width:340px;">
+      <div class="card-title">
+        <div class="cdot" style="background:var(--yellow)"></div>Identity Verification
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Already enrolled? Perform private verification to enable your wallet on-chain.</p>
+      <div class="form-group"><label>NIK (National ID)</label><input type="text" id="verifyNikInput" value="" oninput="syncNikFields('verifyNikInput')" /></div>
+      <div class="form-group">
+        <label>Captured Image</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:8px;background:var(--surface2);border:1px solid #333;opacity:0.85;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="8" r="4" fill="#64748b"/>
+              <rect x="4" y="16" width="16" height="6" rx="3" fill="#64748b"/>
+            </svg>
+          </span>
+          <span style="color:var(--muted);font-size:12px;">Captured Image <span style="color:var(--green);font-size:11px;">(locked)</span></span>
+        </div>
+      </div>
       <button class="btn btn-primary" id="btnVerify" onclick="runVerify()">🔍 Start KYC Verification</button>
-    </div>
-
-    <!-- New Claim Section -->
-    <div id="claimSection" style="display:none; margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
-      <p style="font-size:13px;color:var(--muted);margin:16px 0;">Identity verified. Claim your on-chain credential to
-        anchor your DID on the registry.</p>
-      <button class="btn btn-primary" id="btnClaim" onclick="runClaim()">📜 Claim & Register Identity</button>
-    </div>
-
-    <!-- New Claim Results -->
-    <div id="claimResult"
-      style="display:none; margin-top:24px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px;">
-      <div style="font-weight:600; font-size:12px; margin-bottom:15px; color:var(--green);">✅ ON-CHAIN IDENTITY
-        ACTIVATED</div>
-      <div class="tx-row">
-        <div class="lbl">Issuer</div>
-        <div class="val" id="claimIssuer">-</div>
-      </div>
-      <div class="tx-row">
-        <div class="lbl">DID Status</div>
-        <div class="val" style="color:var(--green)">Verified Registry Member</div>
-      </div>
-      <div class="tx-row">
-        <div class="lbl">Registry Hash</div>
-        <div class="val"><a id="claimHash" href="#" style="font-size:10px;">-</a></div>
-      </div>
-    </div>
-
-    <div class="alert" id="kycAlert"></div>
-
-    <div id="zkpProcess" style="display:none; margin-top:15px; text-align:center;">
-      <div class="spinner" style="margin-bottom:10px;"></div>
-      <div id="zkpStatus" style="font-size:12px; color:var(--accent);">Processing Identity Registry...</div>
+      <div class="alert" id="verifyAlert"></div>
     </div>
   </div>
 
-  <!-- STEP 2: Wallet -->
-  <div class="card" id="cardWallet">
+
+
+
+
+
+  <!-- 2nd row: Connect Wallet -->
+  <div class="card" id="cardWallet" style="width:100%; max-width:700px; margin-bottom: 12px;">
     <div class="card-title">
       <div class="cdot"></div>Connect Your Wallet
     </div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Anchor your verified identity on-chain by
       connecting your MetaMask wallet.</p>
     <div class="wallet-pill" id="walletDisplay" style="display:none; margin-bottom: 8px;"></div>
-
     <div style="display:flex; gap:10px;">
       <button class="btn btn-primary" id="btnConnectMetamask" onclick="connectMetamask()" style="flex:1;">🦊 Connect
         MetaMask</button>
@@ -643,8 +646,81 @@
     <div class="alert" id="walletAlert"></div>
   </div>
 
-  <!-- STEP 3: Transfer -->
-  <div class="card" id="cardTransfer">
+  <!-- 3rd row: Claim & Government Portal (side by side) -->
+  <div style="display: flex; gap: 16px; max-width: 700px; margin-bottom: 12px; flex-wrap: wrap;">
+    <div class="card" id="cardClaim" style="flex:1 1 0; min-width:320px; max-width:340px;">
+      <div class="card-title">
+        <div class="cdot" style="background:var(--green)"></div>Claim On-Chain Credential
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin:16px 0;">Identity verified. Claim your on-chain credential to anchor your DID on the registry.</p>
+      <button class="btn btn-primary" id="btnClaim" onclick="runClaim()" disabled>📜 Claim & Register Identity</button>
+      <div class="alert" id="claimAlert" style="display:none;margin-top:10px;"></div>
+      <!-- New Claim Results -->
+      <div id="claimResult"
+        style="display:none; margin-top:24px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="font-weight:600; font-size:12px; margin-bottom:15px; color:var(--green);">✅ ON-CHAIN IDENTITY
+          ACTIVATED</div>
+        <div class="tx-row">
+          <div class="lbl">Issuer</div>
+          <div class="val" id="claimIssuer">-</div>
+        </div>
+        <div class="tx-row">
+          <div class="lbl">DID Status</div>
+          <div class="val" style="color:var(--green)">Verified Registry Member</div>
+        </div>
+        <div class="tx-row">
+          <div class="lbl">Registry Hash</div>
+          <div class="val"><a id="claimHash" href="#" style="font-size:10px;">-</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="cardGovVerify" style="flex:1 1 0; min-width:320px; max-width:340px;">
+      <div class="card-title">
+        <div class="cdot" style="background:var(--yellow)"></div> Government Verification Portal
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Verify if an On-Chain ID (Wallet) matches a specific National ID (NIK) using Zero-Knowledge Proofs.
+      </p>
+      <div class="form-group">
+        <label>Wallet Address to Check</label>
+        <input type="text" id="verifyWalletAddr" placeholder="0x..." />
+      </div>
+      <div class="form-group">
+        <label>Target NIK (for matching)</label>
+        <input type="text" id="verifyNikInput" placeholder="Enter NIK to verify" />
+      </div>
+      <button class="btn btn-primary" style="background:var(--yellow); color:black;" id="btnGovVerify"
+        onclick="runGovVerification()">
+        🛡️ Verify Identity Link (ZKP)
+      </button>
+      <div class="alert" id="govVerifyAlert"></div>
+      <div class="zkp-note">
+        <strong>ZK Principle:</strong> The NIK is checked locally. The result sent to the blockchain is only a
+        <em>True/False</em> proof. The NIK never leaves this session.
+      </div>
+    </div>
+  </div>
+
+  <!-- 4th row: Registry -->
+  <div class="card" id="cardCheck" style="width:100%; max-width:700px; margin-bottom: 12px;">
+    <div class="card-title">
+      <div class="cdot" style="background:var(--muted)"></div> Check Registry
+    </div>
+    <div class="check-row">
+      <input type="text" id="checkAddr" placeholder="0x..." />
+      <button class="btn btn-outline" onclick="checkWallet()">Check</button>
+    </div>
+    <div class="alert" id="checkAlert"></div>
+  </div>
+
+  
+
+
+
+
+  
+  <!-- Row 4: Cross-Border Transfer (full width) -->
+  <div class="card" id="cardTransfer" style="margin-top: 12px;">
     <div class="card-title">
       <div class="cdot" style="background:var(--purple)"></div> Cross-Border Transfer
     </div>
@@ -666,46 +742,6 @@
     <div class="alert" id="transferAlert"></div>
   </div>
 
-  <div class="card" id="cardCheck">
-    <div class="card-title">
-      <div class="cdot" style="background:var(--muted)"></div> Check Registry
-    </div>
-    <div class="check-row">
-      <input type="text" id="checkAddr" placeholder="0x..." />
-      <button class="btn btn-outline" onclick="checkWallet()">Check</button>
-    </div>
-    <div class="alert" id="checkAlert"></div>
-  </div>
-  <div class="card" id="cardGovVerify">
-    <div class="card-title">
-      <div class="cdot" style="background:var(--yellow)"></div> Government Verification Portal
-    </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
-      Verify if an On-Chain ID (Wallet) matches a specific National ID (NIK) using Zero-Knowledge Proofs.
-    </p>
-
-    <div class="form-group">
-      <label>Wallet Address to Check</label>
-      <input type="text" id="verifyWalletAddr" placeholder="0x..." />
-    </div>
-    <div class="form-group">
-      <label>Target NIK (for matching)</label>
-      <input type="text" id="verifyNikInput" placeholder="Enter NIK to verify" />
-    </div>
-
-    <button class="btn btn-primary" style="background:var(--yellow); color:black;" id="btnGovVerify"
-      onclick="runGovVerification()">
-      🛡️ Verify Identity Link (ZKP)
-    </button>
-
-    <div class="alert" id="govVerifyAlert"></div>
-
-    <div class="zkp-note">
-      <strong>ZK Principle:</strong> The NIK is checked locally. The result sent to the blockchain is only a
-      <em>True/False</em> proof. The NIK never leaves this session.
-    </div>
-  </div>
-
   <footer>
     <p>Backend · <code>http://localhost:3001</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code>
     </p>
@@ -713,6 +749,14 @@
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
   <script>
+    // Sync NIK fields between Enroll and Verify
+    function syncNikFields(changedId) {
+      const nik1 = document.getElementById('nikInput');
+      const nik2 = document.getElementById('verifyNikInput');
+      if (!nik1 || !nik2) return;
+      if (changedId === 'nikInput' && nik2.value !== nik1.value) nik2.value = nik1.value;
+      if (changedId === 'verifyNikInput' && nik1.value !== nik2.value) nik1.value = nik2.value;
+    }
     const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3001' : window.location.protocol + '//' + window.location.hostname + ':3001';
 
@@ -809,9 +853,7 @@
       // only completed off-chain KYC, they still need to run Claim.
       const local = getLocalId();
       await checkOnChainStatus();
-      if (!isVerifiedOnChain && local.kycVerified) {
-        showAlert('walletAlert', 'KYC verified. Please Claim to anchor identity on-chain.', 'info');
-      }
+      updateClaimButtonState();
     }
 
     async function checkOnChainStatus() {
@@ -856,44 +898,43 @@
 
     window.runVerify = async () => {
       try {
-        const local = getLocalId();
-        showAlert('kycAlert', 'Verifying biometrics...', 'info');
-        document.getElementById('zkpProcess').style.display = 'block';
+        const nik = document.getElementById('verifyNikInput').value;
+        showAlert('verifyAlert', 'Verifying biometrics...', 'info');
 
         const res = await fetch(`${API}/api/kyc/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nik: local.nik || document.getElementById('nikInput').value, image: FIXED_FACE_BASE64, wallet: userWallet })
+          body: JSON.stringify({ nik, image: FIXED_FACE_BASE64, wallet: userWallet })
         });
         const data = await res.json();
         console.log("KYC Verification Result:", data);
 
         if (!data.success) throw new Error("KYC failed");
 
-        document.getElementById('zkpProcess').style.display = 'none';
         setLocalId({ kycVerified: true });
-
-        // Show Claim Section
-        document.getElementById('verifySection').style.display = 'none';
-        document.getElementById('claimSection').style.display = 'block';
-
-        showAlert('kycAlert', '✅ Biometrics Verified! Now Claim your on-chain identity.', 'green');
+        showAlert('verifyAlert', '✅ Biometrics Verified! Now Claim your on-chain identity.', 'green');
         document.getElementById('cardWallet').classList.remove('locked');
         document.getElementById('step1Item').classList.add('done');
         document.getElementById('step2Item').classList.add('active');
+        updateClaimButtonState();
+        // Immediately enable claim card and clear any previous claim errors
+        document.getElementById('cardClaim').classList.remove('locked');
+        showAlert('claimAlert', '', '');
       } catch (err) {
-        document.getElementById('zkpProcess').style.display = 'none';
-        showAlert('kycAlert', err.message, 'red');
+        showAlert('verifyAlert', err.message, 'red');
       }
     };
 
     window.runClaim = async () => {
-      if (!userWallet) return showAlert('kycAlert', 'Please connect wallet first (Step 2)', 'red');
+      if (!userWallet) return showAlert('claimAlert', 'Please connect wallet first (Step 2)', 'red');
+      const local = getLocalId();
+      if (!(local.kycVerified || isVerifiedOnChain)) return showAlert('claimAlert', 'Please complete verification first.', 'red');
       try {
-        const local = getLocalId();
         const nik = local.nik || document.getElementById('nikInput').value;
 
-        showAlert('kycAlert', 'Re-verifying biometrics and anchoring on-chain...', 'info');
+        // Show processing/loading message
+        showAlert('claimAlert', '⏳ Processing claim and anchoring on-chain... Please wait.', 'info');
+
         const res = await fetch(`${API}/api/contract/whitelist`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -901,37 +942,67 @@
         });
         const data = await res.json();
         console.log("Claim Result:", data);
-        if (data.success) {
+
+        const claimHashEl = document.getElementById('claimHash');
+        if (data.hash) {
           setLocalId({
             secret: data.secret,
             commitment: data.commitment,
             isWhitelisted: true
           });
-          showAlert('kycAlert', '🚀 Identity & Secret Anchored Successfully!', 'green');
-        }
-        if (!data.success) throw new Error(data.error || "Claim failed");
-
-
-        isVerifiedOnChain = true;
-        document.getElementById('claimSection').style.display = 'none';
-        document.getElementById('claimResult').style.display = 'block';
-        document.getElementById('claimIssuer').textContent = "GOE Alliance Registry v1";
-        document.getElementById('cardTransfer').classList.remove('locked');
-
-        const claimHashEl = document.getElementById('claimHash');
-        if (data.hash) {
-          // Fresh on-chain claim just executed
+          isVerifiedOnChain = true;
+          document.getElementById('claimResult').style.display = 'block';
+          document.getElementById('claimIssuer').textContent = "GOE Alliance Registry v1";
+          document.getElementById('cardTransfer').classList.remove('locked');
           claimHashEl.textContent = data.hash;
           claimHashEl.href = `https://sepolia.etherscan.io/tx/${data.hash}`;
-          showAlert('kycAlert', '🚀 Identity Anchored Successfully!', 'green');
+          showAlert('claimAlert', '🚀 Identity Anchored Successfully!<br><a href="https://sepolia.etherscan.io/tx/' + data.hash + '" target="_blank" style="font-size:10px; color:white; word-break:break-all;">View transaction</a>', 'green');
+        } else if (
+          (data.message && data.message.toLowerCase().includes('already')) ||
+          (data.error && data.error.toLowerCase().includes('already')) ||
+          (data.success && !data.hash)
+        ) {
+          // Show already whitelisted message and try to link to last tx if available
+          isVerifiedOnChain = true;
+          document.getElementById('cardTransfer').classList.remove('locked');
+          document.getElementById('claimResult').style.display = 'block';
+          claimHashEl.textContent = 'Already whitelisted';
+          if (data.lastTxHash) {
+            claimHashEl.href = `https://sepolia.etherscan.io/tx/${data.lastTxHash}`;
+            showAlert('claimAlert', `✅ Wallet already whitelisted on-chain.<br><a href="https://sepolia.etherscan.io/tx/${data.lastTxHash}" target="_blank" style="font-size:10px; color:white; word-break:break-all;">View last whitelist transaction</a>`, 'green');
+          } else {
+            claimHashEl.href = '#';
+            showAlert('claimAlert', '✅ Wallet already whitelisted on-chain. You can transfer now.', 'green');
+          }
         } else {
-          // Already whitelisted case (no new tx hash)
-          claimHashEl.textContent = data.message || 'Already whitelisted';
-          claimHashEl.href = '#';
-          showAlert('kycAlert', '✅ Wallet already whitelisted on-chain. You can transfer now.', 'green');
+          showAlert('claimAlert', data.error || 'Claim failed', 'red');
         }
-      } catch (err) { showAlert('kycAlert', err.message, 'red'); }
+      } catch (err) {
+        showAlert('claimAlert', err.message, 'red');
+      }
     };
+
+    // Enable/disable claim button based on wallet and verification
+    function updateClaimButtonState() {
+      const btnClaim = document.getElementById('btnClaim');
+      if (!btnClaim) return;
+      const local = getLocalId();
+      // Enable if wallet is connected and KYC is verified (even if not yet on-chain)
+      if (userWallet && (local.kycVerified || isVerifiedOnChain)) {
+        btnClaim.disabled = false;
+      } else {
+        btnClaim.disabled = true;
+      }
+    }
+    // Call updateClaimButtonState when wallet or verification changes
+    // (Assume you have logic elsewhere to set userWallet and isVerifiedOnChain)
+    window.setWalletAndVerificationState = function(wallet, verified) {
+      userWallet = wallet;
+      isVerifiedOnChain = verified;
+      updateClaimButtonState();
+    };
+    // Initial state
+    document.addEventListener('DOMContentLoaded', updateClaimButtonState);
     async function generateZKP() {
       // Check if snarkjs is available on the window object
       const snarkjs = window.snarkjs;
@@ -973,19 +1044,21 @@
 
         // 1. Generate the ZKP locally using your custom circuit
         // This uses the nik and secret stored in localStorage to prove identity without leakage.
-        const { proof, publicSignals } = await generateZKP();
-        console.log("Generated Proof:", proof);
-        console.log("Generated Public Signals:", publicSignals);
-        // 2. Format the proof for the Solidity Verifier
-        // snarkjs output must be mapped to the [a, b, c] structure used in Verifier.sol
+        let proof, publicSignals;
+        try {
+          ({ proof, publicSignals } = await generateZKP());
+        } catch (zkpErr) {
+          console.error('ZKP generation failed:', zkpErr);
+          showAlert('transferAlert', '❌ ZKP generation failed or you are not whitelisted. Please ensure you are registered and try again.', 'red');
+          return;
+        }
+        // ...existing code...
         const a = [proof.pi_a[0].toString(), proof.pi_a[1].toString()];
         const b = [
           [proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString()],
           [proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString()]
         ];
         const c = [proof.pi_c[0].toString(), proof.pi_c[1].toString()];
-
-
 
         showAlert('transferAlert', 'Bridging transfer via your wallet...', 'info');
 
@@ -995,7 +1068,6 @@
         const signer = await provider.getSigner();
 
         // 4. Update the ABI to match your new ZK-enabled contract function
-        // This replaces the old sendCrossBorder logic with one that verifies the proof on-chain.
         const bridge = new ethers.Contract(
           bridgeAddress,
           [
@@ -1005,17 +1077,6 @@
         );
 
         // 5. Execute the ZK-verified Transfer
-        // 'publicSignals' typically contains your public inputs like the commitment and wallet address.
-        // const tx = await bridge.sendCrossBorderWithZK(
-        //   to,
-        //   a,
-        //   b,
-        //   c,
-        //   publicSignals,
-        //   { value: ethers.parseEther(amount.toString()) }
-        // );
-
-        // Ensure public signals are also strings
         const inputs = publicSignals.map(sig => sig.toString());
 
         const tx = await bridge.sendCrossBorderWithZK(to, a, b, c, inputs, {
@@ -1031,7 +1092,12 @@
         );
       } catch (err) {
         console.error('Bridge transfer failed:', err);
-        showAlert('transferAlert', err.message || 'Transfer failed', 'red');
+        // Friendly error for ZKP/circuit or not whitelisted
+        if (err && err.message && err.message.includes('Assert Failed')) {
+          showAlert('transferAlert', '❌ ZKP proof failed. You are likely not whitelisted or your proof is invalid.', 'red');
+        } else {
+          showAlert('transferAlert', err.message || 'Transfer failed', 'red');
+        }
       }
     };
 

@@ -73,9 +73,19 @@ function getBridge(signer) {
 async function whitelistWallet(walletAddress, commitment) {
   const wallet = getAdminWallet();
   const registry = getRegistry(wallet);
-  // Pass both wallet address and the commitment string/number
+  
+  console.log(`[Chain] Whitelisting ${walletAddress} with commitment ${commitment}`);
   const tx = await registry.whitelist(walletAddress, commitment); 
-  return await tx.wait();
+  console.log(`[Chain] TX Sent: ${tx.hash}`);
+  
+  const receipt = await tx.wait();
+  console.log(`[Chain] Confirmed in block ${receipt.blockNumber}`);
+
+  return {
+    success: true,
+    hash: tx.hash,
+    blockNumber: receipt.blockNumber
+  };
 }
 
 // ─── Check KYC verification status (read-only) ───────────────────────────────

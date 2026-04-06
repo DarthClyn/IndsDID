@@ -121,21 +121,37 @@ app.post("/api/kyc/verify", async (req, res) => {
 // });
 app.post("/api/contract/whitelist", async (req, res) => {
   const { wallet, nik, image } = req.body;
-  
-  // 1. InterBio Biometric Check
-  const kycResult = await verifyUser({ nik, faceImageBase64: image });
-  if (!kycResult.verified) return res.status(403).json({ error: "KYC failed" });
+  try {
+    // 1. InterBio Biometric Check
+    const kycResult = await verifyUser({ nik, faceImageBase64: image });
+    if (!kycResult.verified) return res.status(403).json({ error: "KYC failed" });
 
-  // 2. Generate Identity Commitment
-  const poseidon = await buildPoseidon();
-  const secret = ethers.hexlify(ethers.randomBytes(32)); // Random secret
-  const commitment = poseidon.F.toString(poseidon([nik, secret, wallet]));
+    // 2. Generate Identity Commitment
+    const poseidon = await buildPoseidon();
+    const secret = ethers.hexlify(ethers.randomBytes(32)); // Random secret
+    const commitment = poseidon.F.toString(poseidon([nik, secret, wallet]));
 
-  // 3. Whitelist the COMMITMENT on-chain instead of just the wallet
-  const result = await whitelistWallet(wallet, commitment);
+    // 3. Whitelist the COMMITMENT on-chain instead of just the wallet
+    let result;
+    try {
+      result = await whitelistWallet(wallet, commitment);
+    } catch (err) {
+      // Handle already verified error from contract
+      if (
+        (err.reason && err.reason.includes("Already verified")) ||
+        (err.error && err.error.message && err.error.message.includes("Already verified"))
+      ) {
+        return res.json({ success: true, message: "Already whitelisted" });
+      }
+      // fallback for other errors
+      return res.status(500).json({ success: false, error: err.message || "Unknown error" });
+    }
 
-  // 4. Return Secret to User for LocalStorage
-  res.json({ success: true, secret, commitment, hash: result.txHash });
+    // 4. Return Secret to User for LocalStorage
+    res.json({ success: true, secret, commitment, hash: result.hash });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || "Unknown error" });
+  }
 });
 // ─── Contract: Transfer ──────────────────────────────────────────────────
 app.post("/api/contract/transfer", async (req, res) => {
