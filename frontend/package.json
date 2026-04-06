@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Frontend for Polygon ID + ZKP Demo",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host --port 3000",
     "build": "vite build",
     "preview": "vite preview"
   },

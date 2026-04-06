@@ -206,6 +206,13 @@
 <div class="card" id="cardWhitelist" style="display:none;">
   <div class="card-title"><div class="cdot" style="background:var(--green)"></div> Step 3 — Identity Registered On-Chain</div>
   <div class="tx-rows" id="whitelistRows"></div>
+  
+  <div class="form-group" id="claimArea" style="margin-top:20px;border-top:1px solid var(--surface2);padding-top:20px;display:none;">
+    <label>Reusable ID (Polygon ID VC)</label>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Scan this to import your KYC status into your mobile wallet. You only need to do this once.</p>
+    <button class="btn btn-outline" id="btnClaimDid" onclick="showClaimQr()">📱 Add to Polygon ID Wallet</button>
+    <div id="claimQr" style="display:none;justify-content:center;margin:15px 0;"></div>
+  </div>
 </div>
 
 <!-- STEP 4: Transfer -->
@@ -285,8 +292,12 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 
-  // We use a simpler ID generation for the demo that fits within the JS-SDK core
-  const API = 'http://localhost:3001';
+  // Dynamic API URL for mobile-friendly QR scanning.
+  // Use current hostname to allow mobile wallets on the same network to connect.
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001' 
+    : window.location.protocol + '//' + window.location.hostname + ':3001';
+
 
   // ── Demo wallet fallback ─────────────────────────────────────
   const DEMO_WALLET    = '0x3A7fECFe9057E1A3CcAdB313D57b94E755a2d9D6';
@@ -479,13 +490,27 @@
   window.initializeDid = function() { return generateIdentity(wallet); };
 
   // Derive a deterministic did:polygonid:polygon:amoy identifier from an Ethereum wallet.
-  // Used as fallback if the backend SDK call fails.
+  // Uses a simple fallback if crypto.subtle (SHA-256) is disabled (e.g. non-HTTPS).
   async function derivePolygonDID(addr) {
-    const msgBuffer = new TextEncoder().encode('polygonid:polygon:amoy:' + addr.toLowerCase());
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = new Uint8Array(hashBuffer);
-    // Take first 27 bytes for a ~42 char base58 identifier (matching Polygon ID identifier length)
-    const id = base58Encode(hashArray.slice(0, 27));
+    const input = 'polygonid:polygon:amoy:' + addr.toLowerCase();
+    
+    let hashArray;
+    if (window.crypto && window.crypto.subtle) {
+      const msgBuffer = new TextEncoder().encode(input);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      hashArray = new Uint8Array(hashBuffer);
+    } else {
+      // Very simple deterministic fallback for development (non-secure context)
+      console.warn('[DID] Secure context unavailable; using fallback hash for DID derivation');
+      hashArray = new Uint8Array(32);
+      for (let i = 0; i < input.length; i++) {
+        hashArray[i % 32] ^= input.charCodeAt(i);
+      }
+    }
+    
+    // Take first 20 bytes for a valid iden3-compatible identifier length
+    const idBytes = hashArray.slice(0, 20);
+    const id = base58Encode(idBytes);
     return `did:polygonid:polygon:amoy:${id}`;
   }
 
@@ -732,6 +757,72 @@
       rows.innerHTML += `<div style="margin-top:14px;"><label style='font-size:12px;color:var(--muted);margin-bottom:3px;display:block;'>Verifiable Credential (VC):</label><pre style='background:var(--surface2);color:var(--text);font-size:11px;padding:12px;border-radius:8px;overflow-x:auto;max-height:320px;'>${vcJson}</pre></div>`;
     }
     addRow(rows, 'Privacy', '🔒 NIK, name, face — not stored on-chain');
+
+    if (data.credential || data.polygonIdCredential) {
+      document.getElementById('claimArea').style.display = 'block';
+      window.lastIssuedCredential = data.polygonIdCredential || data.credential;
+    }
+  }
+
+  window.showClaimQr = function() {
+    const vc = window.lastIssuedCredential;
+    const qrDiv = document.getElementById('claimQr');
+    const btn = document.getElementById('btnClaimDid');
+
+    if (!vc) return;
+
+    qrDiv.style.display = 'block';
+    qrDiv.style.background = '#ffffff';
+    qrDiv.style.padding = '15px';
+    qrDiv.style.borderRadius = '12px';
+    qrDiv.style.margin = '20px auto';
+    qrDiv.style.width = 'fit-content';
+    qrDiv.innerHTML = '<div style="color:#000;font-size:14px;text-align:center;">Preparing Offer...</div>';
+
+    const msgId = 'offer_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    
+    // Build the Credential Offer iden3comm payload
+    // Standard v1.0 format: https://iden3-communication.io/credentials/1.0/offer
+    const offer = {
+      id: msgId,
+      typ: "application/iden3-zkp-json",
+      type: "https://iden3-communication.io/credentials/1.0/offer",
+      thid: msgId,
+      body: {
+        url: `${API}/api/polygonid/credential/${wallet}`,
+        credentials: [
+          {
+            id: "IndonesiaKYC",
+            description: "Proof of Indonesia KYC compliance and biometric match score"
+          }
+        ]
+      },
+      from: vc.issuer || "did:polygonid:polygon:amoy:issuer-demo"
+    };
+
+    const offerStr = JSON.stringify(offer);
+    console.log("[POLYGON_ID] Claim QR Payload:", offer);
+    
+    function renderClaim() {
+      const QRLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
+      if (QRLib) {
+        qrDiv.innerHTML = '';
+        new QRLib(qrDiv, {
+          text: offerStr,
+          width: 250,
+          height: 250,
+          correctLevel : QRLib.CorrectLevel.L
+        });
+        btn.innerHTML = '✅ QR Displayed';
+        
+        if (window.location.hostname === 'localhost') {
+           qrDiv.innerHTML += '<div style="color:#ff4444;font-size:10px;text-align:center;margin-top:10px;">⚠️ Accessing via "localhost". Phone scanning will not work.<br>Use your machine\'s Local IP (e.g. 192.168.x.x) instead.</div>';
+        }
+      } else {
+        setTimeout(renderClaim, 150);
+      }
+    }
+    renderClaim();
   }
 
   // ── Step 4: Cross-border transfer ─────────────────────────────────────────
@@ -831,13 +922,11 @@
       logStep('POLYGON_ID', 'Query loaded', qData);
 
       const isRealMode = String(qData.verifierMode || '').toLowerCase() === 'real';
-      const session = qData?.session;
-      const sessionID = session?.sessionID || session?.sessionId || session?.id || session?.thid || null;
+      const sessionID = qData.sessionID || qData.session?.sessionID || qData.session?.id || null;
+      const qrCode = qData.qrCode || qData.session?.qrCode || (qData.session ? JSON.stringify(qData.session) : '');
 
       // Real verifier flow (Privado): backend returns sessionID + iden3comm QR URI.
-      // User scans in wallet, then we poll backend status until success.
       if (isRealMode) {
-        const qrCode = session?.qrCode || (session ? JSON.stringify(session) : '');
         const qrDiv = document.getElementById('polygonQr');
         if (qrCode) {
           console.log("[POLYGON_ID] Starting QR generation for session:", sessionID);

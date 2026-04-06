@@ -1,5 +1,5 @@
 // identityService.js
-// Polygon ID Sepolia DID creation using JS-SDK
+// Polygon ID Amoy DID creation using JS-SDK
 const {
   core,
   IdentityWallet,
@@ -17,35 +17,35 @@ const {
   defaultEthConnectionConfig,
 } = require("@0xpolygonid/js-sdk");
 
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const AMOY_RPC_URL = process.env.AMOY_RPC_URL || process.env.SEPOLIA_RPC_URL;
 const POLYGON_ID_STATE_ADDRESS = process.env.POLYGON_ID_STATE_ADDRESS;
-const POLYGON_ID_CHAIN_ID = Number(process.env.POLYGON_ID_CHAIN_ID || "11155111");
+const AMOY_CHAIN_ID = 80002; // Polygon Amoy
 
-// 1. Initial Setup: Register the Sepolia network globally in core
+// 1. Initial Setup: Register the Polygon Amoy network globally in core
 // We do this at the module level to ensure it's only done once and shared across calls.
-console.log("[PolygonID] Globally registering Sepolia network for DID methods...");
+console.log("[PolygonID] Globally registering Polygon Amoy network for DID methods...");
 const networkConfig = {
-  blockchain: "eth",
-  network: "sepolia",
-  chainId: 11155111,
-  networkFlag: 0b00000011, // Decimal 3: (ETH | Testnet)
+  blockchain: "polygon",
+  network: "amoy",
+  chainId: AMOY_CHAIN_ID,
+  networkFlag: 0b01000001, // Polygon (64) | Testnet (1)
 };
 
 // Register for several possible method identifiers for robustness
 ["iden3", "polygonid"].forEach(method => {
   try {
     core.registerDidMethodNetwork({ ...networkConfig, method });
-    console.log(`[PolygonID] Registered ${method} for eth:sepolia`);
+    console.log(`[PolygonID] Registered ${method} for polygon:amoy`);
   } catch (e) {
-    if (!e.message.includes("already registered")) {
+    if (!e.message.includes("already")) {
        console.error(`[PolygonID] Failed to register ${method}:`, e.message);
     }
   }
 });
 
-async function createSepoliaIdentity() {
-  if (!SEPOLIA_RPC_URL) {
-    throw new Error("SEPOLIA_RPC_URL is not set in .env");
+async function createAmoyIdentity() {
+  if (!AMOY_RPC_URL) {
+    throw new Error("AMOY_RPC_URL is not set in .env");
   }
   if (!POLYGON_ID_STATE_ADDRESS) {
     throw new Error("POLYGON_ID_STATE_ADDRESS is not set in .env");
@@ -59,9 +59,9 @@ async function createSepoliaIdentity() {
   // Configure the on-chain state connection
   const ethConfig = {
     ...defaultEthConnectionConfig,
-    url: SEPOLIA_RPC_URL,
+    url: AMOY_RPC_URL,
     contractAddress: POLYGON_ID_STATE_ADDRESS,
-    chainId: POLYGON_ID_CHAIN_ID,
+    chainId: AMOY_CHAIN_ID,
   };
   const stateStorage = new EthStateStorage(ethConfig);
 
@@ -84,12 +84,11 @@ async function createSepoliaIdentity() {
   const credentialWallet = new CredentialWallet(dataStorage);
   const identityWallet = new IdentityWallet(kms, dataStorage, credentialWallet);
 
-  // Create identity on Ethereum Sepolia using polygonid DID method
-  // We strictly follow the 'polygonid' method specification provided in the documentation
+  // Create identity on Polygon Amoy using polygonid DID method
   const creationParams = {
     method: "polygonid",
-    blockchain: "eth",
-    network: "sepolia",
+    blockchain: "polygon",
+    network: "amoy",
     revocationOpts: {
       type: CredentialStatusType.Iden3ReverseSparseMerkleTreeProof,
       id: "https://rhs-staging.polygonid.me"
@@ -103,7 +102,7 @@ async function createSepoliaIdentity() {
     return { did: did.string(), credential };
   } catch (err) {
     console.error("[PolygonID] createIdentity call failed:", err.message);
-    // If 'polygonid' method fails, fall back once to the fundamental 'iden3' method
+    // If 'polygonid' method fails, fall back once to fundamental 'iden3' method
     console.log("[PolygonID] Attempting fallback to 'iden3' method...");
     const { did, credential } = await identityWallet.createIdentity({
       ...creationParams,
@@ -114,4 +113,4 @@ async function createSepoliaIdentity() {
   }
 }
 
-module.exports = { createSepoliaIdentity };
+module.exports = { createAmoyIdentity };

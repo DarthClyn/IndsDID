@@ -19,10 +19,11 @@ const {
   getVerifierConfig,
   createVerifierSession,
 } = require("./polygonIdService");
-const { createSepoliaIdentity } = require("./identityService");
+const { createAmoyIdentity } = require("./identityService");
 
 
 const app = express();
+const issuedCredentials = new Map();
 app.use(cors({ origin: "*" }));
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -31,7 +32,7 @@ app.post("/api/polygonid/create-did", async (req, res) => {
   const rid = requestId();
   logRoute(rid, "POST /api/polygonid/create-did", "request received");
   try {
-    const { did, credential } = await createSepoliaIdentity();
+    const { did, credential } = await createAmoyIdentity();
     logRoute(rid, "POST /api/polygonid/create-did", "DID created", did);
     res.json({ did, credential });
   } catch (e) {
@@ -116,11 +117,16 @@ app.get("/api/polygonid/query", (req, res) => {
     if (verifier.mode === "real") {
       createVerifierSession()
         .then((session) => {
-          res.json({ ...base, session });
+          res.json({
+            ...base,
+            sessionID: session.sessionID,
+            qrCode: session.qrCode,
+            hasSession: true
+          });
         })
         .catch((err) => {
           console.error(`[API][${rid}][GET /api/polygonid/query] session error`, err.message);
-          res.json({ ...base, session: null, sessionError: err.message });
+          res.json({ ...base, sessionID: null, qrCode: null, hasSession: false, sessionError: err.message });
         });
       return;
     }
@@ -296,7 +302,7 @@ app.post("/api/kyc/verify", upload.single("faceImage"), async (req, res) => {
       issuer: polygonIdCredential.issuer,
     });
 
-    res.json({
+    const responseBody = {
       kycVerified: true,
       score: kycResult.score,
       message: chainResult
@@ -305,7 +311,10 @@ app.post("/api/kyc/verify", upload.single("faceImage"), async (req, res) => {
       onChain: chainResult,
       credential,
       polygonIdCredential,
-    });
+    };
+    
+    issuedCredentials.set(walletAddress.toLowerCase(), responseBody);
+    res.json(responseBody);
   } catch (err) {
     console.error(`[API][${rid}][POST /api/kyc/verify] error`, err.message);
     res.status(500).json({ error: err.message });
@@ -390,11 +399,35 @@ app.get("/api/check/:walletAddress", async (req, res) => {
   }
 });
 
+app.get("/api/polygonid/credential/:wallet", (req, res) => {
+  const wallet = req.params.wallet.toLowerCase();
+  const data = issuedCredentials.get(wallet);
+  if (!data) return res.status(404).json({ error: "No credential found for this wallet. Verify KYC first." });
+  
+  const vc = data.polygonIdCredential || data.credential;
+  
+  // Wrap the VC in a standard iden3comm Issuance Response envelope.
+  // The mobile app requires this envelope to correctly "finish" the adding flow.
+  const issuanceResponse = {
+    id: `issuance_${Date.now()}`,
+    typ: "application/iden3-zkp-json",
+    type: "https://iden3-communication.io/credentials/1.0/issuance-response",
+    thid: `offer_${Date.now()}`, // Matching the offer thread
+    body: {
+      credential: vc
+    },
+    from: process.env.POLYGON_ID_ISSUER_DID || "did:polygonid:polygon:amoy:issuer-demo",
+    to: vc.credentialSubject?.id
+  };
+
+  res.json(issuanceResponse);
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   const kyc = getKycConfig();
-  console.log(`\n🚀 DID Backend running on http://localhost:${PORT}`);
+  console.log(`\n🚀 DID Backend running on 0.0.0.0:${PORT}`);
   console.log(`\n📄 DIDRegistry:    ${process.env.CONTRACT_ADDRESS || "⚠️  NOT SET"}`);
   console.log(`🌉 CrossBorderBridge: ${process.env.BRIDGE_ADDRESS || "⚠️  NOT SET"}`);
   console.log(`🌐 Network: Polygon Amoy`);
