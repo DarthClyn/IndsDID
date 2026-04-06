@@ -86,33 +86,33 @@ async function checkVerification(walletAddress) {
 }
 
 
-// ─── Execute cross-border transfer (gated by registry on-chain) ───────────
+// ─── Execute cross-border transfer (admin/relayer flow - DISCOURAGED for UI) ─
+// NOTE: The preferred flow for the dApp is that the user's own wallet
+// directly calls `sendCrossBorder` from the browser (see frontend/index.html).
+// This helper remains only for backend/relayer experiments and still enforces
+// that the mapped `sender` is verified in the DID registry before sending.
 async function executeCrossBorderTransfer(sender, recipient, amountEth) {
   if (!process.env.BRIDGE_ADDRESS) throw new Error("BRIDGE_ADDRESS not set");
 
-  const wallet = getAdminWallet();
-  console.log(`[Bridge] Executing transfer for ${sender} -> ${recipient} (${amountEth} MATIC)`);
+  console.log(`[Bridge] (Relayer) Executing transfer for ${sender} -> ${recipient} (${amountEth} MATIC)`);
 
-  const bridge = getBridge(wallet);
-  
-  // NOTE: On-chain, the contract itself check calls `DIDRegistry.isVerified(msg.sender)`.
-  // As this backend is acting as a relayer (admin wallet), we should ensure 'sender' 
-  // matches a verified identity on-chain for the demo.
+  // 1) Ensure the claimed sender is KYC-verified in the registry.
   const registry = getRegistry();
-  // Bypassed for testing purposes with unauthorized wallets
-  
   const isVerified = await registry.isVerified(sender);
   if (!isVerified) {
     throw new Error(`Identity mismatch: Wallet ${sender} is NOT whitelisted on-chain.`);
   }
-  
+
+  // 2) Relayer/admin wallet performs the actual bridge call.
+  const wallet = getAdminWallet();
+  const bridge = getBridge(wallet);
 
   const amountWei = ethers.parseEther(amountEth.toString());
-  const tx = await bridge.sendCrossBorder(recipient, "Indonesia", "Vietnam", { 
+  const tx = await bridge.sendCrossBorder(recipient, "Indonesia", "Vietnam", {
     value: amountWei,
-    gasLimit: 500000 
+    gasLimit: 500000,
   });
-  
+
   console.log("[Bridge] Transfer TX sent:", tx.hash);
   const receipt = await tx.wait();
   console.log("[Bridge] Confirmed in block:", receipt.blockNumber);
@@ -122,7 +122,7 @@ async function executeCrossBorderTransfer(sender, recipient, amountEth) {
     blockNumber: receipt.blockNumber,
     from: sender,
     to: recipient,
-    amount: amountEth
+    amount: amountEth,
   };
 }
 
