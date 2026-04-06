@@ -106,7 +106,7 @@
 <body>
 
 <header>
-  <div class="badge"><span class="dot"></span> GOE Alliance · Amoy Testnet · Registry Identity</div>
+  <div class="badge"><span class="dot"></span> GOE Alliance · Sepolia Testnet · Registry Identity</div>
   <h1>Universal <em>Identity</em> Registry</h1>
   <p>Secure Biometric Enrollment → Private Age Verification → On-Chain Registry<br/>Zero personal data ever touches the blockchain.</p>
 </header>
@@ -130,10 +130,10 @@
 
 <!-- STEP 1: KYC -->
 <div class="card" id="cardKyc">
-  <div class="card-title"><div class="cdot"></div> Step 1 — Identity Enrollment & Verification</div>
+  <div class="card-title"><div class="cdot"></div>Identity Enrollment & Verification</div>
   
   <div id="enrollSection">
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register your biometric profile. Your Name and DOB are stored locally only.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register With InterBio.</p>
     <div class="form-group"><label>Full Name</label><input type="text" id="fullNameInput" placeholder="John Doe" /></div>
     <div class="form-group"><label>Date of Birth</label><input type="date" id="dobInput" /></div>
     <div class="form-group"><label>NIK (National ID)</label><input type="text" id="nikInput" value="3171234567890001" /></div>
@@ -169,7 +169,7 @@
 
 <!-- STEP 2: Wallet -->
 <div class="card" id="cardWallet">
-  <div class="card-title"><div class="cdot"></div> Step 2 — Connect Wallet</div>
+  <div class="card-title"><div class="cdot"></div>Connect Your Wallet</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Anchor your verified identity on-chain by connecting your MetaMask wallet.</p>
   <div class="wallet-pill" id="walletDisplay" style="display:none; margin-bottom: 8px;"></div>
   
@@ -181,13 +181,13 @@
 
 <!-- STEP 3: Transfer -->
 <div class="card" id="cardTransfer">
-  <div class="card-title"><div class="cdot" style="background:var(--purple)"></div> Step 3 — Cross-Border Transfer</div>
+  <div class="card-title"><div class="cdot" style="background:var(--purple)"></div> Cross-Border Transfer</div>
   <div class="stats-bar">
     <div class="stat-chip"><div class="sv" id="statTxCount">0</div><div class="sk">Bridge TXs</div></div>
     <div class="stat-chip"><div class="sv" id="statVolume">0 ETH</div><div class="sk">Volume</div></div>
   </div>
   <div class="form-group"><label>Recipient Wallet (Vietnam)</label><input type="text" id="toWallet" placeholder="0x..." /></div>
-  <div class="form-group"><label>Amount (MATIC)</label><input type="number" id="txAmount" value="0.001" step="0.001" /></div>
+  <div class="form-group"><label>Amount (ETH)</label><input type="number" id="txAmount" value="0.001" step="0.001" /></div>
   <button class="btn btn-green" id="btnTransfer" onclick="runTransfer()">🌉 Execute Transfer</button>
   <div class="alert" id="transferAlert"></div>
 </div>
@@ -217,29 +217,29 @@
   let isVerifiedOnChain = false;
   let bridgeAddress = null;
 
-  const AMOY_PARAMS = {
-    chainId: '0x13882', // 80002
-    chainName: 'Polygon Amoy',
-    rpcUrls: ['https://rpc-amoy.polygon.technology'],
-    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
-    blockExplorerUrls: ['https://amoy.polygonscan.com']
+  const SEPOLIA_PARAMS = {
+    chainId: '0xaa36a7', // 11155111
+    chainName: 'Sepolia',
+    rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com'],
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    blockExplorerUrls: ['https://sepolia.etherscan.io']
   };
 
-  async function ensureAmoyNetwork(provider) {
+  async function ensureSepoliaNetwork(provider) {
     const currentChainId = await provider.request({ method: 'eth_chainId' });
-    if (currentChainId === AMOY_PARAMS.chainId) return;
+    if (currentChainId === SEPOLIA_PARAMS.chainId) return;
 
     try {
       await provider.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: AMOY_PARAMS.chainId }]
+        params: [{ chainId: SEPOLIA_PARAMS.chainId }]
       });
     } catch (switchErr) {
       // If the chain is not added yet, request to add it
       if (switchErr.code === 4902) {
         await provider.request({
           method: 'wallet_addEthereumChain',
-          params: [AMOY_PARAMS]
+          params: [SEPOLIA_PARAMS]
         });
       } else {
         throw switchErr;
@@ -268,8 +268,8 @@
         provider = window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum.providers[0];
       }
 
-      // Ensure we are on Polygon Amoy testnet
-      await ensureAmoyNetwork(provider);
+      // Ensure we are on Sepolia testnet
+      await ensureSepoliaNetwork(provider);
 
       let accounts;
       try {
@@ -402,12 +402,21 @@
       isVerifiedOnChain = true;
       document.getElementById('claimSection').style.display = 'none';
       document.getElementById('claimResult').style.display = 'block';
-      document.getElementById('claimHash').textContent = data.hash;
-      document.getElementById('claimHash').href = `https://amoy.polygonscan.com/tx/${data.hash}`;
       document.getElementById('claimIssuer').textContent = "GOE Alliance Registry v1";
       document.getElementById('cardTransfer').classList.remove('locked');
-      
-      showAlert('kycAlert', '🚀 Identity Anchored Successfully!', 'green');
+
+      const claimHashEl = document.getElementById('claimHash');
+      if (data.hash) {
+        // Fresh on-chain claim just executed
+        claimHashEl.textContent = data.hash;
+        claimHashEl.href = `https://sepolia.etherscan.io/tx/${data.hash}`;
+        showAlert('kycAlert', '🚀 Identity Anchored Successfully!', 'green');
+      } else {
+        // Already whitelisted case (no new tx hash)
+        claimHashEl.textContent = data.message || 'Already whitelisted';
+        claimHashEl.href = '#';
+        showAlert('kycAlert', '✅ Wallet already whitelisted on-chain. You can transfer now.', 'green');
+      }
     } catch (err) { showAlert('kycAlert', err.message, 'red'); }
   };
 
@@ -423,8 +432,8 @@
 
       showAlert('transferAlert', 'Bridging transfer via your wallet...', 'info');
 
-      // Re-ensure we are on Polygon Amoy before sending
-      await ensureAmoyNetwork(window.ethereum);
+      // Re-ensure we are on Sepolia before sending
+      await ensureSepoliaNetwork(window.ethereum);
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
@@ -448,7 +457,7 @@
 
       showAlert(
         'transferAlert',
-        `🚀 Transfer Success! <br/> <a href="https://amoy.polygonscan.com/tx/${tx.hash}" target="_blank" style="font-size:10px; color:white; word-break:break-all;">${tx.hash}</a>`,
+        `🚀 Transfer Success! <br/> <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="font-size:10px; color:white; word-break:break-all;">${tx.hash}</a>`,
         'green'
       );
     } catch (err) {
@@ -476,7 +485,7 @@
 
       if (d.bridgeStats) {
         document.getElementById('statTxCount').textContent = d.bridgeStats.totalTransactions;
-        document.getElementById('statVolume').textContent = `${d.bridgeStats.totalVolumeEth} MATIC`;
+        document.getElementById('statVolume').textContent = `${d.bridgeStats.totalVolumeEth} ETH`;
       }
     } catch (e) { console.error('Offline'); }
   }

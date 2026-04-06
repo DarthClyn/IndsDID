@@ -74,13 +74,12 @@ npx serve@14 frontend -p 3000
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/health` | Contract addresses, InterBio config, bridge stats, Polygon ID config |
+| GET | `/api/health` | Contract addresses, InterBio config, bridge stats |
 | POST | `/api/kyc/enroll` | Enroll user biometrics with InterBio |
-| POST | `/api/kyc/verify` | KYC verify via InterBio + whitelist wallet + issue VC + IndonesiaKYC VC (off-chain) |
-| GET | `/api/check/:addr` | Check if wallet is verified in DIDRegistry |
-| POST | `/api/transfer` | Cross-border ETH transfer (gated by DIDRegistry.isVerified) |
-| GET | `/api/polygonid/query` | Returns IndonesiaKYC verification query (for wallet / verifier) |
-| POST | `/api/polygonid/verify` | Off-chain Polygon ID proof verification gate before transfer |
+| POST | `/api/kyc/verify` | KYC verify via InterBio (off-chain only, no on-chain write) |
+| POST | `/api/contract/whitelist` | Re-verify biometrics and call `DIDRegistry.whitelist(wallet)` (Claim step) |
+| GET | `/api/contract/verify-status/:wallet` | Check if wallet is verified in DIDRegistry |
+| POST | `/api/contract/transfer` | Admin/relayer cross-border ETH transfer (gated by DIDRegistry.isVerified) |
 
 ---
 

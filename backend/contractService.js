@@ -23,8 +23,8 @@ const BRIDGE_ABI = [
 
 
 function getProvider() {
-  // Contracts are deployed on Polygon Amoy — use AMOY_RPC_URL
-  const rpc = process.env.AMOY_RPC_URL || process.env.SEPOLIA_RPC_URL || "https://rpc-amoy.polygon.technology";
+  // Contracts are deployed on Ethereum Sepolia — use SEPOLIA_RPC_URL
+  const rpc = process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
   return new ethers.JsonRpcProvider(rpc);
 }
 
@@ -56,7 +56,7 @@ async function whitelistWallet(walletAddress) {
   return {
     txHash: tx.hash,
     blockNumber: receipt.blockNumber,
-    polygonscanUrl: `https://amoy.polygonscan.com/tx/${tx.hash}`,
+    polygonscanUrl: `https://sepolia.etherscan.io/tx/${tx.hash}`,
     contractAddress: process.env.CONTRACT_ADDRESS,
   };
 }

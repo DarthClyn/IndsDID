@@ -7,9 +7,9 @@ function getNormalizedPrivateKey() {
   return raw.startsWith("0x") ? raw : `0x${raw}`;
 }
 
-function ensureAmoyAndEnv() {
-  if (hre.network.name !== "amoy") {
-    throw new Error(`This script targets Polygon Amoy. Current network: ${hre.network.name}. Run with: npx hardhat run scripts/deployBridge.js --network amoy`);
+function ensureSepoliaAndEnv() {
+  if (hre.network.name !== "sepolia") {
+    throw new Error(`This script targets Sepolia. Current network: ${hre.network.name}. Run with: npx hardhat run scripts/deployBridge.js --network sepolia`);
   }
   const pk = getNormalizedPrivateKey();
   if (!pk || pk.length !== 66) {
@@ -18,7 +18,7 @@ function ensureAmoyAndEnv() {
 }
 
 async function main() {
-  ensureAmoyAndEnv();
+  ensureSepoliaAndEnv();
   const DID_REGISTRY = process.env.CONTRACT_ADDRESS;
   if (!DID_REGISTRY) {
     throw new Error("CONTRACT_ADDRESS not set in .env — deploy DIDRegistry first");
@@ -29,7 +29,7 @@ async function main() {
     throw new Error("VERIFIER_ADDRESS not set in .env");
   }
 
-  console.log("🚀 Deploying CrossBorderBridge to Polygon Amoy...");
+  console.log("🚀 Deploying CrossBorderBridge to Sepolia...");
   console.log("🔗 Using DIDRegistry:", DID_REGISTRY);
 
   const [deployer] = await hre.ethers.getSigners();
@@ -42,7 +42,7 @@ async function main() {
   const address = await bridge.getAddress();
   console.log("\n✅ CrossBorderBridge deployed!");
   console.log("📄 Bridge address:", address);
-  console.log("🔗 PolygonScan:", `https://amoy.polygonscan.com/address/${address}`);
+  console.log("🔗 Etherscan:", `https://sepolia.etherscan.io/address/${address}`);
   console.log("\n👉 Add to .env: BRIDGE_ADDRESS=" + address);
 }
 
