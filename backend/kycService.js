@@ -75,10 +75,11 @@ async function enrollUser({ nik, faceImageBase64, referenceId }) {
     console.log("[KYC MOCK] Enroll skipped — MOCK_KYC=true");
     return { success: true, raw: { mock: true, nik } };
   }
+  console.log(`[KYC-PROVIDER] Starting enrollment for NIK: ${nik}`);
   const token = await getToken();
   const transactionId = await initiateKyc(token, 0);
+  console.log(`[KYC-PROVIDER] Transaction initiated. ID: ${transactionId}`);
 
-  console.log("[KYC] Enrolling user with NIK:", nik);
   const res = await axios.post(
     `${BASE_URL}/v1/kyc/enroll`,
     {
@@ -91,12 +92,15 @@ async function enrollUser({ nik, faceImageBase64, referenceId }) {
     { headers: authHeader(token) }
   );
 
-  console.log("[KYC] Enroll response:", JSON.stringify(res.data));
+  console.log("[KYC-PROVIDER] Real API Enrollment Response Received:");
+  console.dir(res.data, { depth: null });
+
   const success =
     res.data?.status?.isSuccess ??
     res.data?.isSuccess ??
     res.data?.success ??
     false;
+    
   return { success, raw: res.data };
 }
 

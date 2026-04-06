@@ -8,11 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@iden3/js-crypto": "^1.0.0",
-    "@iden3/js-iden3-core": "^1.0.0",
     "buffer": "^6.0.3",
-    "process": "^0.11.10",
-    "snarkjs": "^0.7.0"
+    "process": "^0.11.10"
   },
   "devDependencies": {
     "vite": "^5.0.0",

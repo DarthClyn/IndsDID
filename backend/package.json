@@ -8,8 +8,6 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@0xpolygonid/js-sdk": "^1.43.0",
-    "@iden3/js-crypto": "^1.3.2",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
