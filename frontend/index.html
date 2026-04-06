@@ -273,11 +273,15 @@
 
       let accounts;
       try {
-        accounts = await provider.request({ method: 'eth_request_accounts' });
+        // Modern EIP-1102 request
+        accounts = await provider.request({ method: 'eth_requestAccounts' });
       } catch (reqErr) {
+        // Fallback for legacy providers that don't support eth_requestAccounts
         if (reqErr.code === -32601 && typeof provider.enable === 'function') {
           accounts = await provider.enable();
-        } else throw reqErr;
+        } else {
+          throw reqErr;
+        }
       }
 
       userWallet = accounts[0];
@@ -419,6 +423,8 @@
 
       showAlert('transferAlert', 'Bridging transfer via your wallet...', 'info');
 
+      // Re-ensure we are on Polygon Amoy before sending
+      await ensureAmoyNetwork(window.ethereum);
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
