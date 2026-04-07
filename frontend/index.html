@@ -101,7 +101,13 @@
 
     footer { margin-top:32px; text-align:center; font-size:11px; color:var(--muted); line-height:2; }
     footer code { font-family:'JetBrains Mono',monospace; background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:10px; }
+
+    /* New layout helpers */
+    .row { display: flex; gap: 16px; width: 100%; max-width: 700px; margin-bottom: 12px; flex-wrap: wrap; }
+    .row .card { flex: 1 1 0; min-width: 320px; max-width: 100%; margin-bottom: 0; }
+    @media (max-width: 680px) { .row .card { max-width: 100%; } }
   </style>
+
 </head>
 <body>
 
@@ -125,81 +131,101 @@
 <div class="steps">
   <div class="step-item active" id="step1Item"><div class="step-num">1</div><div class="step-label">KYC</div></div>
   <div class="step-item" id="step2Item"><div class="step-num">2</div><div class="step-label">Wallet</div></div>
-  <div class="step-item" id="step3Item"><div class="step-num">3</div><div class="step-label">Transfer</div></div>
+  <div class="step-item" id="step3Item"><div class="step-num">3</div><div class="step-label">Claim</div></div>
+  <div class="step-item" id="step4Item"><div class="step-num">4</div><div class="step-label">Transfer</div></div>
 </div>
+
 
 <!-- STEP 1: KYC -->
-<div class="card" id="cardKyc">
-  <div class="card-title"><div class="cdot"></div>Identity Enrollment & Verification</div>
-  
-  <div id="enrollSection">
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register With InterBio.</p>
-    <div class="form-group"><label>Full Name</label><input type="text" id="fullNameInput" placeholder="John Doe" /></div>
-    <div class="form-group"><label>Date of Birth</label><input type="date" id="dobInput" /></div>
-    <div class="form-group"><label>NIK (National ID)</label><input type="text" id="nikInput" value="3171234567890001" /></div>
-    <button class="btn btn-primary" id="btnEnroll" onclick="runEnroll()">🧬 Enroll Biometrics</button>
+<div class="row">
+  <div class="card" id="cardKyc">
+    <div class="card-title"><div class="cdot"></div>Identity Enrollment</div>
+    <div id="enrollSection">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Register With InterBio.</p>
+      <div class="form-group"><label>Full Name</label><input type="text" id="fullNameInput" placeholder="John Doe" /></div>
+      <div class="form-group"><label>Date of Birth</label><input type="date" id="dobInput" /></div>
+      <div class="form-group"><label>NIK (National ID)</label><input type="text" id="nikInput" value="3171234567890001" oninput="syncNikFields('nikInput')" /></div>
+      <button class="btn btn-primary" id="btnEnroll" onclick="runEnroll()">🧬 Enroll Biometrics</button>
+      <div class="alert" id="kycAlert"></div>
+      <div id="zkpProcess" style="display:none; margin-top:15px; text-align:center;">
+        <div class="spinner" style="margin-bottom:10px;"></div>
+        <div id="zkpStatus" style="font-size:12px; color:var(--accent);">Processing Identity Registry...</div>
+      </div>
+    </div>
   </div>
 
-  <div id="verifySection" style="margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
-    <p style="font-size:13px;color:var(--muted);margin:16px 0;">Already enrolled? Perform private verification to enable your wallet on-chain.</p>
-    <button class="btn btn-primary" id="btnVerify" onclick="runVerify()">🔍 Start KYC Verification</button>
-  </div>
-
-  <!-- New Claim Section -->
-  <div id="claimSection" style="display:none; margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
-    <p style="font-size:13px;color:var(--muted);margin:16px 0;">Identity verified. Claim your on-chain credential to anchor your DID on the registry.</p>
-    <button class="btn btn-primary" id="btnClaim" onclick="runClaim()">📜 Claim & Register Identity</button>
-  </div>
-
-  <!-- New Claim Results -->
-  <div id="claimResult" style="display:none; margin-top:24px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px;">
-    <div style="font-weight:600; font-size:12px; margin-bottom:15px; color:var(--green);">✅ ON-CHAIN IDENTITY ACTIVATED</div>
-    <div class="tx-row"><div class="lbl">Issuer</div><div class="val" id="claimIssuer">-</div></div>
-    <div class="tx-row"><div class="lbl">DID Status</div><div class="val" style="color:var(--green)">Verified Registry Member</div></div>
-    <div class="tx-row"><div class="lbl">Registry Hash</div><div class="val"><a id="claimHash" href="#" style="font-size:10px;">-</a></div></div>
-  </div>
-
-  <div class="alert" id="kycAlert"></div>
-  
-  <div id="zkpProcess" style="display:none; margin-top:15px; text-align:center;">
-    <div class="spinner" style="margin-bottom:10px;"></div>
-    <div id="zkpStatus" style="font-size:12px; color:var(--accent);">Processing Identity Registry...</div>
+  <div class="card" id="cardVerify">
+    <div class="card-title"><div class="cdot" style="background:var(--yellow)"></div>Identity Verification</div>
+    <div id="verifySection">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Already enrolled? Perform private verification to enable your wallet on-chain.</p>
+      <div class="form-group"><label>NIK (National ID)</label><input type="text" id="verifyNikInput" value="3171234567890001" oninput="syncNikFields('verifyNikInput')" /></div>
+      <button class="btn btn-primary" id="btnVerify" onclick="runVerify()">🔍 Start KYC Verification</button>
+      <div class="alert" id="verifyAlert"></div>
+      <div id="verifyZkpProcess" style="display:none; margin-top:15px; text-align:center;">
+        <div class="spinner" style="margin-bottom:10px;"></div>
+        <div id="verifyZkpStatus" style="font-size:12px; color:var(--accent);">Verifying Identity...</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- STEP 2: Wallet -->
-<div class="card" id="cardWallet">
-  <div class="card-title"><div class="cdot"></div>Connect Your Wallet</div>
+
+<!-- STEP 2: Wallet (Full Row) -->
+<div class="card locked" id="cardWallet" style="width:100%; max-width:700px; margin-bottom: 12px;">
+  <div class="card-title"><div class="cdot"></div>2. Connect Your Wallet</div>
   <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Anchor your verified identity on-chain by connecting your MetaMask wallet.</p>
   <div class="wallet-pill" id="walletDisplay" style="display:none; margin-bottom: 8px;"></div>
-  
   <div style="display:flex; gap:10px;">
     <button class="btn btn-primary" id="btnConnectMetamask" onclick="connectMetamask()" style="flex:1;">🦊 Connect MetaMask</button>
   </div>
   <div class="alert" id="walletAlert"></div>
 </div>
 
-<!-- STEP 3: Transfer -->
-<div class="card" id="cardTransfer">
-  <div class="card-title"><div class="cdot" style="background:var(--purple)"></div> Cross-Border Transfer</div>
+
+<!-- STEP 3: Claim (Dedicated Card) -->
+<div class="card locked" id="cardClaim" style="width:100%; max-width:700px; margin-bottom: 12px;">
+  <div class="card-title"><div class="cdot" style="background:var(--green)"></div>3. Claim On-Chain Credential</div>
+  <div id="claimSection">
+    <p style="font-size:13px;color:var(--muted);margin:16px 0;">Identity verified. Finalize your on-chain registration to enable global transfers.</p>
+    <button class="btn btn-primary" id="btnClaim" onclick="runClaim()">📜 Claim & Register Identity</button>
+  </div>
+  <div id="claimResult" style="display:none; margin-top:24px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px;">
+    <div style="font-weight:600; font-size:12px; margin-bottom:15px; color:var(--green);">✅ ON-CHAIN IDENTITY ACTIVATED</div>
+    <div class="tx-row"><div class="lbl">Registry</div><div class="val" id="claimIssuer">-</div></div>
+    <div class="tx-row"><div class="lbl">Status</div><div class="val" style="color:var(--green)">Verified Registry Member</div></div>
+    <div class="tx-row"><div class="val"><a id="claimHash" href="#" style="font-size:10px;" target="_blank">-</a></div></div>
+  </div>
+  <!-- Local Error Display for Claim Step -->
+  <div class="alert" id="claimAlert"></div>
+</div>
+
+<!-- STEP 4: Transfer (Full Row) -->
+<div class="card locked" id="cardTransfer" style="width:100%; max-width:700px; margin-bottom: 12px;">
+  <div class="card-title"><div class="cdot" style="background:var(--purple)"></div> 4. Cross-Border Transfer</div>
+
+
   <div class="stats-bar">
     <div class="stat-chip"><div class="sv" id="statTxCount">0</div><div class="sk">Bridge TXs</div></div>
     <div class="stat-chip"><div class="sv" id="statVolume">0 ETH</div><div class="sk">Volume</div></div>
   </div>
   <div class="form-group"><label>Recipient Wallet (Vietnam)</label><input type="text" id="toWallet" placeholder="0x..." /></div>
   <div class="form-group"><label>Amount (ETH)</label><input type="number" id="txAmount" value="0.001" step="0.001" /></div>
-  <button class="btn btn-green" id="btnTransfer" onclick="runTransfer()">🌉 Execute Transfer</button>
+  <button class="btn btn-green" id="btnTransfer" onclick="runTransfer()">Bridge Transfer</button>
   <div class="alert" id="transferAlert"></div>
 </div>
 
-<div class="card" id="cardCheck">
+<!-- Registry Check (Full Row, like Wallet) -->
+<div class="card" id="cardCheck" style="width:100%; max-width:700px; margin-bottom: 12px;">
   <div class="card-title"><div class="cdot" style="background:var(--muted)"></div> Check Registry</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Verify a wallet's registry status.</p>
   <div class="check-row">
     <input type="text" id="checkAddr" placeholder="0x..." />
     <button class="btn btn-outline" onclick="checkWallet()">Check</button>
   </div>
   <div class="alert" id="checkAlert"></div>
 </div>
+
+
 
 <footer>
   <p>Backend · <code>https://indsdid.onrender.com</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code></p>
@@ -297,16 +323,15 @@
     document.getElementById('walletDisplay').textContent = `Connected: ${userWallet}`;
     document.getElementById('walletDisplay').style.display = 'block';
     document.getElementById('step2Item').classList.add('done');
-    document.getElementById('step3Item').classList.add('active');
+    document.getElementById('step3Item').classList.add('active'); // Activate Claim Step
     
-    // On connect, just check on-chain status. If the user
-    // previously claimed, this will unlock transfers. If they
-    // only completed off-chain KYC, they still need to run Claim.
     const local = getLocalId();
     await checkOnChainStatus();
     if (!isVerifiedOnChain && local.kycVerified) {
-      showAlert('walletAlert', 'KYC verified. Please Claim to anchor identity on-chain.', 'info');
+      document.getElementById('cardClaim').classList.remove('locked');
+      showAlert('claimAlert', 'KYC verified. Please Register to anchor identity on-chain.', 'info');
     }
+
   }
 
   async function checkOnChainStatus() {
@@ -316,10 +341,18 @@
       isVerifiedOnChain = !!data.isVerified;
       if (isVerifiedOnChain) {
         document.getElementById('cardTransfer').classList.remove('locked');
-        showAlert('kycAlert', '✅ On-chain identity identified. Transfer enabled.', 'green');
+        document.getElementById('cardClaim').classList.remove('locked');
+        document.getElementById('claimSection').style.display = 'none';
+        document.getElementById('claimResult').style.display = 'block';
+        document.getElementById('claimIssuer').textContent = "GOE Alliance Registry v1";
+        document.getElementById('step3Item').classList.add('done');
+        document.getElementById('step4Item').classList.add('active');
+        showAlert('walletAlert', '✅ On-chain identity identified. Ready for Step 4.', 'green');
       }
+
     } catch (err) { console.error('Status check failed', err); }
   }
+
 
   window.runEnroll = async () => {
     try {
@@ -352,43 +385,46 @@
   window.runVerify = async () => {
     try {
       const local = getLocalId();
-      showAlert('kycAlert', 'Verifying biometrics...', 'info');
-      document.getElementById('zkpProcess').style.display = 'block';
+      const nik = local.nik || document.getElementById('verifyNikInput').value;
+      showAlert('verifyAlert', 'Verifying biometrics...', 'info');
+      document.getElementById('verifyZkpProcess').style.display = 'block';
       
       const res = await fetch(`${API}/api/kyc/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nik: local.nik || document.getElementById('nikInput').value, image: FIXED_FACE_BASE64, wallet: userWallet })
+        body: JSON.stringify({ nik, image: FIXED_FACE_BASE64, wallet: userWallet })
       });
       const data = await res.json();
       console.log("KYC Verification Result:", data);
       
       if (!data.success) throw new Error("KYC failed");
 
-      document.getElementById('zkpProcess').style.display = 'none';
+      document.getElementById('verifyZkpProcess').style.display = 'none';
       setLocalId({ kycVerified: true });
       
-      // Show Claim Section
-      document.getElementById('verifySection').style.display = 'none';
-      document.getElementById('claimSection').style.display = 'block';
+      // Show Claim Section (Separate Card)
+      document.getElementById('cardClaim').classList.remove('locked');
       
-      showAlert('kycAlert', '✅ Biometrics Verified! Now Claim your on-chain identity.', 'green');
+      showAlert('verifyAlert', '✅ Biometrics Verified! Now connect your wallet (Step 2).', 'green');
       document.getElementById('cardWallet').classList.remove('locked');
       document.getElementById('step1Item').classList.add('done');
       document.getElementById('step2Item').classList.add('active');
+
+
     } catch (err) {
-      document.getElementById('zkpProcess').style.display = 'none';
-      showAlert('kycAlert', err.message, 'red');
+      document.getElementById('verifyZkpProcess').style.display = 'none';
+      showAlert('verifyAlert', err.message, 'red');
     }
   };
 
+
   window.runClaim = async () => {
-    if (!userWallet) return showAlert('kycAlert', 'Please connect wallet first (Step 2)', 'red');
+    if (!userWallet) return showAlert('claimAlert', 'Please connect wallet first (Step 2)', 'red');
     try {
       const local = getLocalId();
       const nik = local.nik || document.getElementById('nikInput').value;
       
-      showAlert('kycAlert', 'Re-verifying biometrics and anchoring on-chain...', 'info');
+      showAlert('claimAlert', 'Re-verifying biometrics and anchoring on-chain...', 'info');
       const res = await fetch(`${API}/api/contract/whitelist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -404,21 +440,23 @@
       document.getElementById('claimResult').style.display = 'block';
       document.getElementById('claimIssuer').textContent = "GOE Alliance Registry v1";
       document.getElementById('cardTransfer').classList.remove('locked');
+      document.getElementById('step3Item').classList.add('done');
+      document.getElementById('step4Item').classList.add('active');
 
       const claimHashEl = document.getElementById('claimHash');
+
       if (data.hash) {
-        // Fresh on-chain claim just executed
         claimHashEl.textContent = data.hash;
         claimHashEl.href = `https://sepolia.etherscan.io/tx/${data.hash}`;
-        showAlert('kycAlert', '🚀 Identity Anchored Successfully!', 'green');
+        showAlert('claimAlert', '🚀 Identity Anchored Successfully!', 'green');
       } else {
-        // Already whitelisted case (no new tx hash)
         claimHashEl.textContent = data.message || 'Already whitelisted';
         claimHashEl.href = '#';
-        showAlert('kycAlert', '✅ Wallet already whitelisted on-chain. You can transfer now.', 'green');
+        showAlert('claimAlert', '✅ Wallet already whitelisted on-chain.', 'green');
       }
-    } catch (err) { showAlert('kycAlert', err.message, 'red'); }
+    } catch (err) { showAlert('claimAlert', err.message, 'red'); }
   };
+
 
   window.runTransfer = async () => {
     try {
