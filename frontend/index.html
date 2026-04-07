@@ -208,8 +208,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
 <script>
-  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'https://indsdid.onrender.com' : window.location.protocol + '//' + window.location.hostname + ':3001';
+  // Always use deployed backend URL
+  const API = 'https://indsdid.onrender.com';
 
   let userWallet = null;
   let didRegistryContract = null;
