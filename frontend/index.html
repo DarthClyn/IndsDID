@@ -974,6 +974,8 @@
         // 1. Generate the ZKP locally using your custom circuit
         // This uses the nik and secret stored in localStorage to prove identity without leakage.
         const { proof, publicSignals } = await generateZKP();
+        console.log("Generated Proof;",proof);
+        console.log("Public Signals:", publicSignals);
 
         // 2. Format the proof for the Solidity Verifier
         // snarkjs output must be mapped to the [a, b, c] structure used in Verifier.sol
