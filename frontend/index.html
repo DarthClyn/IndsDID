@@ -743,7 +743,7 @@
   </div>
 
   <footer>
-    <p>Backend · <code>http://localhost:3001</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code>
+    <p>Backend · <code>https://indsdid.onrender.com</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code>
     </p>
     <p>Bridge · <code id="footerBridge">loading...</code></p>
   </footer>
@@ -757,8 +757,7 @@
       if (changedId === 'nikInput' && nik2.value !== nik1.value) nik2.value = nik1.value;
       if (changedId === 'verifyNikInput' && nik1.value !== nik2.value) nik1.value = nik2.value;
     }
-    const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:3001' : window.location.protocol + '//' + window.location.hostname + ':3001';
+    const API = 'https://indsdid.onrender.com';
 
     let userWallet = null;
     let didRegistryContract = null;
