@@ -202,14 +202,14 @@
 </div>
 
 <footer>
-  <p>Backend · <code>http://localhost:3001</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code></p>
+  <p>Backend · <code>https://indsdid.onrender.com</code> &nbsp;|&nbsp; Registry · <code id="footerRegistry">loading...</code></p>
   <p>Bridge · <code id="footerBridge">loading...</code></p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
 <script>
   const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3001' : window.location.protocol + '//' + window.location.hostname + ':3001';
+    ? 'https://indsdid.onrender.com' : window.location.protocol + '//' + window.location.hostname + ':3001';
 
   let userWallet = null;
   let didRegistryContract = null;
