@@ -1021,8 +1021,8 @@
       // Ensure the paths to these files are correct relative to your index.html
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
         inputs,
-        "identity.wasm",
-        "identity_final.zkey"
+        "/identity.wasm",
+        "/identity_final.zkey"
       );
 
       return { proof, publicSignals };
