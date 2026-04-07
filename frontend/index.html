@@ -532,7 +532,10 @@
     }
   </style>
   <!-- <script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.4/dist/snarkjs.min.js"></script> -->
-  <script src="snarkjs.min.js" type="module"></script>
+<script type="module">
+  import * as snarkjs from './snarkjs.min.js';
+  window.snarkjs = snarkjs;
+</script>
 
 </head>
 
