@@ -9,41 +9,38 @@ function getNormalizedPrivateKey() {
 
 function ensureSepoliaAndEnv() {
   if (hre.network.name !== "sepolia") {
-    throw new Error(`This script targets Sepolia. Current network: ${hre.network.name}. Run with: npx hardhat run scripts/deployBridge.js --network sepolia`);
+    throw new Error(`This script targets Sepolia. Run with: npx hardhat run scripts/deployBridge.js --network sepolia`);
   }
   const pk = getNormalizedPrivateKey();
   if (!pk || pk.length !== 66) {
-    throw new Error("PRIVATE_KEY missing/invalid in .env (expected 32-byte hex, with or without 0x)");
+    throw new Error("PRIVATE_KEY missing/invalid in .env");
   }
 }
 
 async function main() {
   ensureSepoliaAndEnv();
+
   const DID_REGISTRY = process.env.CONTRACT_ADDRESS;
-  if (!DID_REGISTRY) {
-    throw new Error("CONTRACT_ADDRESS not set in .env — deploy DIDRegistry first");
+  const ZK_VERIFIER = process.env.VERIFIER_ADDRESS; // This must be the address from deployVerifier.js
+
+  if (!DID_REGISTRY || !ZK_VERIFIER) {
+    throw new Error("CONTRACT_ADDRESS or VERIFIER_ADDRESS not set in .env");
   }
 
-  const UNIVERSAL_VERIFIER = process.env.VERIFIER_ADDRESS;
-  if (!UNIVERSAL_VERIFIER) {
-    throw new Error("VERIFIER_ADDRESS not set in .env");
-  }
-
-  console.log("🚀 Deploying CrossBorderBridge to Sepolia...");
+  console.log("🚀 Deploying ZK-Enabled CrossBorderBridge...");
   console.log("🔗 Using DIDRegistry:", DID_REGISTRY);
+  console.log("🛡️ Using ZK Verifier:", ZK_VERIFIER);
 
   const [deployer] = await hre.ethers.getSigners();
-  console.log("📍 Deployer:", deployer.address);
-
+  
   const Bridge = await hre.ethers.getContractFactory("CrossBorderBridge");
-  const bridge = await Bridge.deploy(DID_REGISTRY, UNIVERSAL_VERIFIER);
+  // Ensure your CrossBorderBridge.sol constructor accepts (Registry, Verifier)
+  const bridge = await Bridge.deploy(DID_REGISTRY, ZK_VERIFIER);
   await bridge.waitForDeployment();
 
   const address = await bridge.getAddress();
-  console.log("\n✅ CrossBorderBridge deployed!");
-  console.log("📄 Bridge address:", address);
-  console.log("🔗 Etherscan:", `https://sepolia.etherscan.io/address/${address}`);
-  console.log("\n👉 Add to .env: BRIDGE_ADDRESS=" + address);
+  console.log("\n✅ Bridge deployed at:", address);
+  console.log("\n👉 Update .env: BRIDGE_ADDRESS=" + address);
 }
 
 main().catch((e) => { console.error(e); process.exitCode = 1; });

@@ -1,8 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { ethers } = require("ethers");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
-
+const { buildPoseidon } = require("circomlibjs");
 const { enrollUser, verifyUser, getKycConfig } = require("./kycService");
 const {
   whitelistWallet,
@@ -86,39 +87,72 @@ app.post("/api/kyc/verify", async (req, res) => {
 });
 
 // ─── Contract: Whitelist ──────────────────────────────────────────────────
-app.post("/api/contract/whitelist", async (req, res) => {
-  const rid = requestId();
-  try {
-    const { wallet, nik, image } = req.body;
-    logRoute(rid, "POST /api/contract/whitelist", "received", { wallet, nik });
+// app.post("/api/contract/whitelist", async (req, res) => {
+//   const rid = requestId();
+//   try {
+//     const { wallet, nik, image } = req.body;
+//     logRoute(rid, "POST /api/contract/whitelist", "received", { wallet, nik });
 
-    if (!wallet || !nik || !image) {
-      return res.status(400).json({ error: "wallet, nik, and image are required for on-chain claim" });
-    }
+//     if (!wallet || !nik || !image) {
+//       return res.status(400).json({ error: "wallet, nik, and image are required for on-chain claim" });
+//     }
 
-    // Secondary Verify: Ensure the credentials are valid before touching the chain
-    logRoute(rid, "POST /api/contract/whitelist", "re-verifying kyc...");
-    const kycResult = await verifyUser({ nik, faceImageBase64: image });
+//     // Secondary Verify: Ensure the credentials are valid before touching the chain
+//     logRoute(rid, "POST /api/contract/whitelist", "re-verifying kyc...");
+//     const kycResult = await verifyUser({ nik, faceImageBase64: image });
     
-    if (!kycResult.verified) {
-      logRoute(rid, "POST /api/contract/whitelist", "kyc failed", kycResult);
-      return res.status(403).json({ 
-        error: "Biometric verification failed. Cannot whitelist on-chain.",
-        score: kycResult.score 
-      });
+//     if (!kycResult.verified) {
+//       logRoute(rid, "POST /api/contract/whitelist", "kyc failed", kycResult);
+//       return res.status(403).json({ 
+//         error: "Biometric verification failed. Cannot whitelist on-chain.",
+//         score: kycResult.score 
+//       });
+//     }
+
+//     logRoute(rid, "POST /api/contract/whitelist", "kyc passed, initiating trx");
+//     const result = await whitelistWallet(wallet);
+//     res.json({ success: true, hash: result.txHash });
+//   } catch (err) {
+//     if (err.message.includes("Already verified")) {
+//        return res.json({ success: true, message: "Already whitelisted" });
+//     }
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+app.post("/api/contract/whitelist", async (req, res) => {
+  const { wallet, nik, image } = req.body;
+  try {
+    // 1. InterBio Biometric Check
+    const kycResult = await verifyUser({ nik, faceImageBase64: image });
+    if (!kycResult.verified) return res.status(403).json({ error: "KYC failed" });
+
+    // 2. Generate Identity Commitment
+    const poseidon = await buildPoseidon();
+    const secret = ethers.hexlify(ethers.randomBytes(32)); // Random secret
+    const commitment = poseidon.F.toString(poseidon([nik, secret, wallet]));
+
+    // 3. Whitelist the COMMITMENT on-chain instead of just the wallet
+    let result;
+    try {
+      result = await whitelistWallet(wallet, commitment);
+    } catch (err) {
+      // Handle already verified error from contract
+      if (
+        (err.reason && err.reason.includes("Already verified")) ||
+        (err.error && err.error.message && err.error.message.includes("Already verified"))
+      ) {
+        return res.json({ success: true, message: "Already whitelisted" });
+      }
+      // fallback for other errors
+      return res.status(500).json({ success: false, error: err.message || "Unknown error" });
     }
 
-    logRoute(rid, "POST /api/contract/whitelist", "kyc passed, initiating trx");
-    const result = await whitelistWallet(wallet);
-    res.json({ success: true, hash: result.txHash });
+    // 4. Return Secret to User for LocalStorage
+    res.json({ success: true, secret, commitment, hash: result.hash });
   } catch (err) {
-    if (err.message.includes("Already verified")) {
-       return res.json({ success: true, message: "Already whitelisted" });
-    }
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message || "Unknown error" });
   }
 });
-
 // ─── Contract: Transfer ──────────────────────────────────────────────────
 app.post("/api/contract/transfer", async (req, res) => {
   const rid = requestId();
