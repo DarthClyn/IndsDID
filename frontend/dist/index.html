@@ -869,23 +869,29 @@
     }
 
     window.runEnroll = async () => {
+      const action = 'KYC Enroll';
       try {
         const name = document.getElementById('fullNameInput').value;
         const dob = document.getElementById('dobInput').value;
         const nik = document.getElementById('nikInput').value;
+        const inputValues = { name, dob, nik };
+        // console.log(`[API] Action: ${action}, Input Values:`, inputValues);
         if (!name || !dob || !nik) throw new Error("Missing fields");
 
         const isAdult = (new Date().getFullYear() - new Date(dob).getFullYear()) >= 18;
         setLocalId({ name, dob, nik, isAdult });
 
         showAlert('kycAlert', 'Enrolling biometrics...', 'info');
-        const res = await fetch(`${API}/api/kyc/enroll`, {
+        const url = `${API}/api/kyc/enroll`;
+        const body = { nik, image: FIXED_FACE_BASE64 };
+        console.log(`[API] Action: ${action}, URL: ${url}, Body:`, body);
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nik, image: FIXED_FACE_BASE64 })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
-        console.log("KYC Enrollment Result:", data);
+        console.log(`[API] Action: ${action}, Output:`, data);
 
         if (!res.ok && !data.success) throw new Error("Enrollment failed");
 
@@ -893,21 +899,30 @@
         document.getElementById('cardWallet').classList.remove('locked');
         document.getElementById('step1Item').classList.add('done');
         document.getElementById('step2Item').classList.add('active');
-      } catch (err) { showAlert('kycAlert', err.message, 'red'); }
+      } catch (err) {
+        console.log(`[API] Action: ${action}, Error:`, err);
+        showAlert('kycAlert', err.message, 'red');
+      }
     };
 
     window.runVerify = async () => {
+      const action = 'KYC Verify';
       try {
         const nik = document.getElementById('verifyNikInput').value;
+        const inputValues = { nik, wallet: userWallet };
+       // console.log(`[API] Action: ${action}, Input Values:`, inputValues);
         showAlert('verifyAlert', 'Verifying biometrics...', 'info');
 
-        const res = await fetch(`${API}/api/kyc/verify`, {
+        const url = `${API}/api/kyc/verify`;
+        const body = { nik, image: FIXED_FACE_BASE64, wallet: userWallet };
+        console.log(`[API] Action: ${action}, URL: ${url}, Body:`, body);
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nik, image: FIXED_FACE_BASE64, wallet: userWallet })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
-        console.log("KYC Verification Result:", data);
+        console.log(`[API] Action: ${action}, Output:`, data);
 
         if (!data.success) throw new Error("KYC failed");
 
@@ -921,27 +936,34 @@
         document.getElementById('cardClaim').classList.remove('locked');
         showAlert('claimAlert', '', '');
       } catch (err) {
+        console.log(`[API] Action: ${action}, Error:`, err);
         showAlert('verifyAlert', err.message, 'red');
       }
     };
 
     window.runClaim = async () => {
+      const action = 'Claim';
       if (!userWallet) return showAlert('claimAlert', 'Please connect wallet first (Step 2)', 'red');
       const local = getLocalId();
       if (!(local.kycVerified || isVerifiedOnChain)) return showAlert('claimAlert', 'Please complete verification first.', 'red');
       try {
         const nik = local.nik || document.getElementById('nikInput').value;
+        const inputValues = { wallet: userWallet, nik };
+       // console.log(`[API] Action: ${action}, Input Values:`, inputValues);
 
         // Show processing/loading message
         showAlert('claimAlert', '⏳ Processing claim and anchoring on-chain... Please wait.', 'info');
 
-        const res = await fetch(`${API}/api/contract/whitelist`, {
+        const url = `${API}/api/contract/whitelist`;
+        const body = { wallet: userWallet, nik, image: FIXED_FACE_BASE64 };
+        console.log(`[API] Action: ${action}, URL: ${url}, Body:`, body);
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet: userWallet, nik, image: FIXED_FACE_BASE64 })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
-        console.log("Claim Result:", data);
+        console.log(`[API] Action: ${action}, Output:`, data);
 
         const claimHashEl = document.getElementById('claimHash');
         if (data.hash) {
@@ -978,6 +1000,7 @@
           showAlert('claimAlert', data.error || 'Claim failed', 'red');
         }
       } catch (err) {
+        console.log(`[API] Action: ${action}, Error:`, err);
         showAlert('claimAlert', err.message, 'red');
       }
     };
@@ -1102,14 +1125,22 @@
     };
 
     window.checkWallet = async () => {
+      const action = 'Check Wallet';
       try {
         const addr = document.getElementById('checkAddr').value;
-        const res = await fetch(`${API}/api/contract/verify-status/${addr}`);
+        const url = `${API}/api/contract/verify-status/${addr}`;
+       console.log(`[API] Action: ${action}, URL: ${url}, Body:`, { addr });
+        const res = await fetch(url);
         const data = await res.json();
+        console.log(`[API] Action: ${action}, Output:`, data);
         showAlert('checkAlert', data.isVerified ? '✅ Verified' : '❌ Not Verified', data.isVerified ? 'green' : 'red');
-      } catch (err) { showAlert('checkAlert', err.message, 'red'); }
+      } catch (err) {
+        console.log(`[API] Action: ${action}, Error:`, err);
+        showAlert('checkAlert', err.message, 'red');
+      }
     };
     window.runGovVerification = async () => {
+      const action = 'Government Verification';
       const walletToCheck = document.getElementById('verifyWalletAddr').value;
       const nikToCheck = document.getElementById('verifyNikInput').value;
       const alertId = 'govVerifyAlert';
@@ -1120,8 +1151,11 @@
         showAlert(alertId, '📡 Fetching on-chain commitment...', 'info');
 
         // 1. Get the commitment stored in the DIDRegistry for this wallet
-        const res = await fetch(`${API}/api/contract/verify-status/${walletToCheck}`);
+        const url = `${API}/api/contract/verify-status/${walletToCheck}`;
+       console.log(`[API] Action: ${action}, URL: ${url}, Body:`, { walletToCheck });
+        const res = await fetch(url);
         const registryData = await res.json();
+        console.log(`[API] Action: ${action}, Output:`, registryData);
 
         if (!registryData.isVerified) throw new Error("This wallet is not registered in the DID Registry.");
 
@@ -1146,10 +1180,12 @@
           wallet: walletToCheck.toString(),
           commitment: onChainCommitment.toString()
         };
+      //  console.log(`[API] Action: ${action}, ZKP Input:`, inputs);
 
         const { proof, publicSignals } = await prover.groth16.fullProve(
           inputs, "identity.wasm", "identity_final.zkey"
         );
+      //  console.log(`[API] Action: ${action}, ZKP Output:`, { proof, publicSignals });
 
         // 3. Verify the Proof (Simulating Government Verification)
         // We can verify this via the Smart Contract (on-chain) or the snarkjs library (off-chain)
@@ -1160,6 +1196,7 @@
         const vKey = await vKeyRes.json();
 
         const isValid = await prover.groth16.verify(vKey, publicSignals, proof);
+        //console.log(`[API] Action: ${action}, ZKP Verification Output:`, isValid);
 
         if (isValid) {
           showAlert(alertId, `✅ <strong>VERIFIED:</strong> Wallet ${walletToCheck.slice(0, 6)}... is linked to NIK ${nikToCheck.slice(0, 4)}XXXX`, 'green');
@@ -1168,15 +1205,19 @@
         }
 
       } catch (err) {
-        console.error("Gov Verification Error:", err);
+        console.log(`[API] Action: ${action}, Error:`, err);
         showAlert(alertId, err.message, 'red');
       }
     };
 
     async function init() {
+      const action = 'Init Health';
       try {
-        const r = await fetch(`${API}/api/health`);
+        const url = `${API}/api/health`;
+        console.log(`[API] Action: ${action}, URL: ${url}`);
+        const r = await fetch(url);
         const d = await r.json();
+        console.log(`[API] Action: ${action}, Output:`, d);
         document.getElementById('footerRegistry').textContent = d.registryAddress.slice(0, 8) + '...';
         document.getElementById('footerBridge').textContent = d.bridgeAddress.slice(0, 8) + '...';
         bridgeAddress = d.bridgeAddress;
@@ -1185,7 +1226,10 @@
           document.getElementById('statTxCount').textContent = d.bridgeStats.totalTransactions;
           document.getElementById('statVolume').textContent = `${d.bridgeStats.totalVolumeEth} ETH`;
         }
-      } catch (e) { console.error('Offline'); }
+      } catch (e) {
+        console.log(`[API] Action: ${action}, Error:`, e);
+        console.error('Offline');
+      }
     }
     init();
   </script>
